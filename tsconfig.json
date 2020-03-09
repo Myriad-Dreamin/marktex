@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2018",
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "preserveConstEnums": false,
+    "strict": true,
+    "allowJs": true
+  },
+  "exclude": [
+    "node_modules",
+    "src/**/*.test.ts",
+    "dist"
+  ],
+  "include": [
+    "src"
+  ]
+}
