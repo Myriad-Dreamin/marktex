@@ -1,5 +1,5 @@
 {
-  "name": "myriad-md.js",
+  "name": "marktex.js",
   "version": "0.1.0",
   "description": "markdown parser",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
     "exec": "tsc && node dist/index.js",
     "test": "./node_modules/.bin/mocha.cmd --reporter spec --require ts-node/register src/**/*.test.ts"
   },
-  "repository": "github.com/Myriad-Dreamin/myriad-md",
+  "repository": "github.com/Myriad-Dreamin/marktex",
   "author": "Myriad-Dreamin <camiyoru@gmail.com>",
   "license": "MIT",
   "devDependencies": {
