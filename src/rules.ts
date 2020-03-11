@@ -500,5 +500,12 @@ export {
     InlinePlainExceptSpecialMarksRule, LinkOrImageRule, EmphasisRule, InlineCodeRule, InlinePlainRule,
 };
 export {
-    CodeBlockRule, ParagraphRule, LinkDefinitionRule, ListBlockRule, HorizontalRule, HeaderBlockRule,
+    CodeBlockRule,
+    ParagraphRule,
+    LinkDefinitionRule,
+    QuotesRule,
+    HTMLBlockRule,
+    ListBlockRule,
+    HorizontalRule,
+    HeaderBlockRule,
 };

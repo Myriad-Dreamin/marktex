@@ -1,12 +1,20 @@
 import * as chai from 'chai';
 import {
     blockRules,
+    CodeBlockRule,
     EmphasisRule,
+    HeaderBlockRule,
+    HorizontalRule,
+    HTMLBlockRule,
     InlineCodeRule,
     InlinePlainExceptSpecialMarksRule,
     InlinePlainRule,
     inlineRules,
+    LinkDefinitionRule,
     LinkOrImageRule,
+    ListBlockRule,
+    ParagraphRule,
+    QuotesRule,
     Rule,
     RuleContext,
     validTags
@@ -277,4 +285,52 @@ describe("InlineCodeRule", () => {
     notMatch({text: "````"});
     notMatch({text: "`````"});
     notMatch({text: "``````"});
+});
+
+describe("HorizontalRule", () => {
+    let rule: HorizontalRule = new HorizontalRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+});
+
+describe("LinkDefinitionRule", () => {
+    let rule: LinkDefinitionRule = new LinkDefinitionRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+});
+
+describe("CodeBlockRule", () => {
+    let rule: CodeBlockRule = new CodeBlockRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+});
+
+describe("HeaderBlockRule", () => {
+    let rule: HeaderBlockRule = new HeaderBlockRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+});
+
+describe("ParagraphRule", () => {
+    let rule: ParagraphRule = new ParagraphRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+});
+
+describe("QuotesRule", () => {
+    let rule: QuotesRule = new QuotesRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+});
+
+describe("ListBlockRule", () => {
+    let rule: ListBlockRule = new ListBlockRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+});
+
+describe("HTMLBlockRule", () => {
+    let rule: HTMLBlockRule = new HTMLBlockRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
 });
