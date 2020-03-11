@@ -3,19 +3,20 @@ Object.defineProperty(exports, "__esModule", {value: true});
 var TokenType;
 (function (TokenType) {
     TokenType[TokenType["Paragraph"] = 0] = "Paragraph";
-    TokenType[TokenType["Quotes"] = 1] = "Quotes";
-    TokenType[TokenType["ListBlock"] = 2] = "ListBlock";
-    TokenType[TokenType["Horizontal"] = 3] = "Horizontal";
-    TokenType[TokenType["LinkDefinition"] = 4] = "LinkDefinition";
-    TokenType[TokenType["CodeBlock"] = 5] = "CodeBlock";
-    TokenType[TokenType["HTMLBlock"] = 6] = "HTMLBlock";
-    TokenType[TokenType["HeaderBlock"] = 7] = "HeaderBlock";
-    TokenType[TokenType["InlinePlain"] = 8] = "InlinePlain";
-    TokenType[TokenType["Link"] = 9] = "Link";
-    TokenType[TokenType["ImageLink"] = 10] = "ImageLink";
-    TokenType[TokenType["Emphasis"] = 11] = "Emphasis";
-    TokenType[TokenType["InlineCode"] = 12] = "InlineCode";
-    TokenType[TokenType["MathBlock"] = 13] = "MathBlock";
+    TokenType[TokenType["NewLine"] = 1] = "NewLine";
+    TokenType[TokenType["Quotes"] = 2] = "Quotes";
+    TokenType[TokenType["ListBlock"] = 3] = "ListBlock";
+    TokenType[TokenType["Horizontal"] = 4] = "Horizontal";
+    TokenType[TokenType["LinkDefinition"] = 5] = "LinkDefinition";
+    TokenType[TokenType["CodeBlock"] = 6] = "CodeBlock";
+    TokenType[TokenType["HTMLBlock"] = 7] = "HTMLBlock";
+    TokenType[TokenType["HeaderBlock"] = 8] = "HeaderBlock";
+    TokenType[TokenType["InlinePlain"] = 9] = "InlinePlain";
+    TokenType[TokenType["Link"] = 10] = "Link";
+    TokenType[TokenType["ImageLink"] = 11] = "ImageLink";
+    TokenType[TokenType["Emphasis"] = 12] = "Emphasis";
+    TokenType[TokenType["InlineCode"] = 13] = "InlineCode";
+    TokenType[TokenType["MathBlock"] = 14] = "MathBlock";
 })(TokenType || (TokenType = {}));
 exports.TokenType = TokenType;
 // noinspection JSUnusedGlobalSymbols
@@ -24,6 +25,16 @@ const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlo
     StdBlockTokenCount = StdBlockTokenR - StdBlockTokenL, StdInlineTokenCount = StdInlineTokenR - StdInlineTokenL;
 exports.StdBlockTokenCount = StdBlockTokenCount;
 exports.StdInlineTokenCount = StdInlineTokenCount;
+
+class NewLine {
+    constructor(content) {
+        this.token_type = TokenType.NewLine;
+        this.content = content;
+    }
+}
+
+exports.NewLine = NewLine;
+
 /*
 (.*\n{1...1})+
 
@@ -90,9 +101,10 @@ class Quotes {
 }
 exports.Quotes = Quotes;
 class ListElement {
-    constructor(marker, innerBlocks = []) {
+    constructor(marker, innerBlocks = [], blankSeparated = false) {
         this.marker = marker;
         this.innerBlocks = innerBlocks;
+        this.blankSeparated = blankSeparated;
     }
 }
 exports.ListElement = ListElement;
@@ -197,6 +209,45 @@ class ListBlock {
         this.token_type = TokenType.ListBlock;
         this.listElements = listElements;
         this.ordered = ordered;
+    }
+
+    lookAhead(s) {
+        if (this.ordered) {
+            return ListBlock.lookAheadOrderedListNumber(s);
+        } else {
+            return ListBlock.lookAheadUnorderedListMarker(s);
+        }
+    }
+
+    lookAhead0(s) {
+        if (this.ordered) {
+            return '0' <= s.source[0] && s.source[0] <= '9';
+        } else {
+            return '*+-'.includes(s.source[0]);
+        }
+    }
+
+    static lookAheadOrderedListNumber(s) {
+        for (let i = 0; ; i++) {
+            if ('0' <= s.source[i] && s.source[i] <= '9') {
+                continue;
+            }
+            if (s.source[i] == '.' && s.source[i + 1] == ' ') {
+                let m = s.source.substr(0, i);
+                s.forward(i + 2);
+                return m;
+            }
+            return undefined;
+        }
+    }
+
+    static lookAheadUnorderedListMarker(s) {
+        if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
+            let m = s.source[0];
+            s.forward(2);
+            return m;
+        }
+        return undefined;
     }
 }
 exports.ListBlock = ListBlock;

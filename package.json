@@ -7,14 +7,17 @@
     "build": "tsc",
     "main": "node dist/index.js",
     "exec": "tsc && node dist/index.js",
-    "test": "./node_modules/.bin/mocha.cmd --reporter spec --require ts-node/register src/**/*.test.ts"
+    "test": "./node_modules/.bin/mocha.cmd --reporter spec --require ts-node/register src/**/*.test.ts",
+    "bench": "./node_modules/.bin/mocha.cmd --prof --reporter spec --require ts-node/register src/**/*.bench.ts"
   },
   "repository": "github.com/Myriad-Dreamin/marktex",
   "author": "Myriad-Dreamin <camiyoru@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@types/benchmark": "^1.0.31",
     "@types/chai": "^4.2.10",
     "@types/mocha": "^7.0.2",
+    "benchmark": "^2.1.4",
     "chai": "^4.2.0",
     "mocha": "^7.1.0",
     "ts-node": "^8.6.2",

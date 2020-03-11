@@ -1,6 +1,4 @@
-import * as chai from 'chai';
 import {
-    blockRules,
     CodeBlockRule,
     EmphasisRule,
     HeaderBlockRule,
@@ -9,18 +7,12 @@ import {
     InlineCodeRule,
     InlinePlainExceptSpecialMarksRule,
     InlinePlainRule,
-    inlineRules,
     LinkDefinitionRule,
     LinkOrImageRule,
     ListBlockRule,
     ParagraphRule,
-    QuotesRule,
-    Rule,
-    RuleContext,
-    validTags
+    QuotesRule
 } from "./rules";
-import {Lexer} from "./lexer";
-import {StringStream} from "./source";
 import {
     CodeBlock,
     Emphasis,
@@ -37,8 +29,7 @@ import {
     Paragraph,
     Quotes
 } from "./token";
-
-const expect = chai.expect;
+import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "./test_util";
 
 
 describe('link/image regex', () => {
@@ -80,36 +71,10 @@ describe('link/image regex', () => {
 });
 
 
-type elementMatcher = ({text, matchedLength: number, expectedElement}: { text: string, matchedLength: number, expectedElement: any }) => void;
-type elementNotMatcher = ({text}: { text: string }) => void;
-
-
-function createContext(): RuleContext {
-    return new Lexer({inlineRules, blockRules}, {validTags});
-}
-
-function itWillMatchElement(rule: Rule, ctx: RuleContext = createContext()): elementMatcher {
-    return ({text, matchedLength, expectedElement}: { text: string, matchedLength: number, expectedElement: any }) => {
-        it('will match ' + text, () => {
-            let stream = new StringStream(text);
-            expect(rule.match(stream, ctx)).to.deep.equal(expectedElement);
-            expect(stream.pos).to.equal(matchedLength);
-        })
-    }
-}
-
-function itWillNotMatchElement(rule: Rule, ctx: RuleContext = createContext()): elementNotMatcher {
-    return ({text}: { text: string }) => {
-        it('will not match ' + text, () => {
-            expect(rule.match(new StringStream(text), ctx)).to.undefined;
-        })
-    }
-}
-
 describe("InlinePlainExceptSpecialMarksRule", () => {
     let rule: InlinePlainExceptSpecialMarksRule = new InlinePlainExceptSpecialMarksRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
 
     match({text: "ggg", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
     match({text: "ggg\n\n", matchedLength: "ggg\n\n".length, expectedElement: new InlinePlain("ggg\n\n")});
@@ -139,7 +104,7 @@ describe("InlinePlainExceptSpecialMarksRule", () => {
 describe("InlinePlainRule", () => {
     let rule: InlinePlainRule = new InlinePlainRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
 
     match({text: "ggg", matchedLength: "ggg".length, expectedElement: new InlinePlain("ggg")});
     match({text: "ggg\n\n", matchedLength: "ggg\n\n".length, expectedElement: new InlinePlain("ggg\n\n")});
@@ -162,7 +127,7 @@ describe("InlinePlainRule", () => {
 describe("LinkOrImageRule", () => {
     let rule: InlinePlainRule = new LinkOrImageRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
 
     match({
         text: "[]()",
@@ -244,7 +209,7 @@ describe("LinkOrImageRule", () => {
 describe("EmphasisRule", () => {
     let rule: EmphasisRule = new EmphasisRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
 
     match({
         text: "**_**",
@@ -263,7 +228,7 @@ describe("EmphasisRule", () => {
 describe("InlineCodeRule", () => {
     let rule: InlineCodeRule = new InlineCodeRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
 
     match({
         text: "`dsf`",
@@ -305,7 +270,7 @@ describe("InlineCodeRule", () => {
 describe("HorizontalRule", () => {
     let rule: HorizontalRule = new HorizontalRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
         text: "---",
         matchedLength: "---".length,
@@ -350,7 +315,7 @@ describe("HorizontalRule", () => {
 describe("LinkDefinitionRule", () => {
     let rule: LinkDefinitionRule = new LinkDefinitionRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
         text: "[ ]: q",
         matchedLength: "[ ]: q".length,
@@ -384,7 +349,7 @@ describe("LinkDefinitionRule", () => {
 describe("ParagraphRule", () => {
     let rule: ParagraphRule = new ParagraphRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
         text: "a",
         matchedLength: "a".length,
@@ -427,7 +392,7 @@ describe("ParagraphRule", () => {
 describe("CodeBlockRule", () => {
     let rule: CodeBlockRule = new CodeBlockRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
         text: "\tqwq",
         matchedLength: "\tqwq".length,
@@ -469,7 +434,7 @@ describe("CodeBlockRule", () => {
 describe("HeaderBlockRule", () => {
     let rule: HeaderBlockRule = new HeaderBlockRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
         text: "# qwq",
         matchedLength: "# qwq".length,
@@ -499,7 +464,7 @@ describe("HeaderBlockRule", () => {
 describe("QuotesRule", () => {
     let rule: QuotesRule = new QuotesRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
         text: "> ",
         matchedLength: "> ".length,
@@ -544,7 +509,7 @@ describe("QuotesRule", () => {
 describe("ListBlockRule", () => {
     let rule: ListBlockRule = new ListBlockRule();
     let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
 
     match({
         text: "* ",

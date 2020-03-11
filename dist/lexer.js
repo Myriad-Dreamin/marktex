@@ -20,10 +20,8 @@ class Lexer {
         let e = undefined, t = undefined;
         while (!s.eof) {
             t = this.lexInlineElement(s);
-            if (e && e.token_type == token_1.TokenType.InlinePlain) {
-                if (t.token_type == token_1.TokenType.InlinePlain) {
-                    e.content += t.content;
-                }
+            if (e && e.token_type == token_1.TokenType.InlinePlain && t.token_type == token_1.TokenType.InlinePlain) {
+                e.content += t.content;
             } else {
                 r.push(t);
                 e = t;

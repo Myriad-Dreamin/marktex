@@ -15,7 +15,7 @@ class StringStream {
         return this._pos;
     }
     get eof() {
-        return this._source !== "";
+        return this._source === "";
     }
     forward(n = 1) {
         this._pos = this._pos + Math.min(n, this._source.length);

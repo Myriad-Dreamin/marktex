@@ -160,7 +160,7 @@ class ListBlockRule implements Rule {
             do {
                 let capturing = ListBlockRule.listBlockRegex.exec(s.source);
                 if (capturing === null) {
-                    throw new Error("does not match unordered list, which violate the matchBlock.call convention");
+                    throw new Error("match block failed");
                 }
                 forward(s, capturing);
                 blockContent += capturing[0];
