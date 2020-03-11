@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", {value: true});
 const token_1 = require("./token");
-
 class Lexer {
     constructor({inlineRules, blockRules}, options) {
         this.inlineRules = inlineRules;
@@ -12,11 +11,9 @@ class Lexer {
     lexBlockElement(source) {
         return this._lex(source, this.blockRules);
     }
-
     lexInlineElement(source) {
         return this._lex(source, this.inlineRules);
     }
-
     // noinspection JSUnusedGlobalSymbols
     lexInlineElements(s) {
         let r = [];
@@ -34,7 +31,6 @@ class Lexer {
         }
         return r;
     }
-
     // noinspection JSUnusedGlobalSymbols
     lexBlockElements(s) {
         let r = [];
@@ -43,7 +39,6 @@ class Lexer {
         }
         return r;
     }
-
     _lex(source, rules) {
         for (let rule of rules) {
             let block = rule.match(source, this);
@@ -54,5 +49,4 @@ class Lexer {
         throw new Error("no rule match the stream at pos " + source.pos);
     }
 }
-
 exports.Lexer = Lexer;

@@ -24,7 +24,6 @@ const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlo
     StdBlockTokenCount = StdBlockTokenR - StdBlockTokenL, StdInlineTokenCount = StdInlineTokenR - StdInlineTokenL;
 exports.StdBlockTokenCount = StdBlockTokenCount;
 exports.StdInlineTokenCount = StdInlineTokenCount;
-
 /*
 (.*\n{1...1})+
 
@@ -38,9 +37,7 @@ class Paragraph {
         this.inlineElements = inlineElements;
     }
 }
-
 exports.Paragraph = Paragraph;
-
 /*
 > (inside line1...)
 >?
@@ -91,18 +88,14 @@ class Quotes {
         this.insideTokens = tokens;
     }
 }
-
 exports.Quotes = Quotes;
-
 class ListElement {
     constructor(marker, innerBlocks = []) {
         this.marker = marker;
         this.innerBlocks = innerBlocks;
     }
 }
-
 exports.ListElement = ListElement;
-
 /*
 let m = [*+-]
 1.
@@ -206,17 +199,13 @@ class ListBlock {
         this.ordered = ordered;
     }
 }
-
 exports.ListBlock = ListBlock;
-
 class Horizontal {
     constructor() {
         this.token_type = TokenType.Horizontal;
     }
 }
-
 exports.Horizontal = Horizontal;
-
 /*
 +   Square brackets containing the link identifier (optionally indented from the left margin using up
     to three spaces);
@@ -240,9 +229,7 @@ class LinkDefinition {
         this.title = title;
     }
 }
-
 exports.LinkDefinition = LinkDefinition;
-
 /*
     (.*\n)+
     (.*\n)+
@@ -259,9 +246,7 @@ class CodeBlock {
         this.body = body;
     }
 }
-
 exports.CodeBlock = CodeBlock;
-
 /*
 <any>...<any>
 
@@ -282,9 +267,7 @@ class HTMLBlock {
         this.body = body;
     }
 }
-
 exports.HTMLBlock = HTMLBlock;
-
 /*
 1.
     .*\n[=-]{1...}
@@ -329,18 +312,14 @@ class HeaderBlock {
         this.level = level;
     }
 }
-
 exports.HeaderBlock = HeaderBlock;
-
 class InlinePlain {
     constructor(content) {
         this.token_type = TokenType.InlinePlain;
         this.content = content;
     }
 }
-
 exports.InlinePlain = InlinePlain;
-
 class Link {
     constructor(linkTitle, link, inline, title) {
         this.token_type = TokenType.Link;
@@ -350,9 +329,7 @@ class Link {
         this.title = title;
     }
 }
-
 exports.Link = Link;
-
 class ImageLink {
     constructor(linkTitle, link, inline, title) {
         this.token_type = TokenType.ImageLink;
@@ -362,9 +339,7 @@ class ImageLink {
         this.title = title;
     }
 }
-
 exports.ImageLink = ImageLink;
-
 class Emphasis {
     constructor(content, level) {
         this.token_type = TokenType.Emphasis;
@@ -372,23 +347,18 @@ class Emphasis {
         this.level = level;
     }
 }
-
 exports.Emphasis = Emphasis;
-
 class InlineCode {
     constructor(content) {
         this.token_type = TokenType.InlineCode;
         this.content = content;
     }
 }
-
 exports.InlineCode = InlineCode;
-
 // noinspection JSUnusedGlobalSymbols
 class MathBlock {
     constructor() {
         this.token_type = TokenType.MathBlock;
     }
 }
-
 exports.MathBlock = MathBlock;

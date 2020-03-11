@@ -4,7 +4,6 @@ const lexer_1 = require("./lexer");
 const rules_1 = require("./rules");
 const parser_1 = require("./parser");
 const parse_1 = require("./parse");
-
 function _parseOptions(options) {
     options.inlineRules = options.inlineRules || rules_1.inlineRules;
     options.blockRules = options.blockRules || rules_1.blockRules;
@@ -14,7 +13,6 @@ function _parseOptions(options) {
     }, options.ruleOptions);
     return options;
 }
-
 // noinspection JSUnusedGlobalSymbols
 const myriad = {
     author: "Myriad-Dreamin",

@@ -295,18 +295,15 @@ class HeaderBlockRule implements Rule {
 class LinkDefinitionRule implements Rule {
     readonly name: string = "LinkDefinitionRule";
     readonly description: string = "Standard Markdown Block Rule";
-    public readonly regex: RegExp = /^/;
-
-    // public readonly stdRegex: RegExp = /^/;
+    public readonly regex: RegExp = /^ *\[([^\]]+)]: *<?([^\s>]+)>?(?: +["(]([^\n]*)[")])? *(?:\n|$)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        console.log("todo");
         let capturing = this.regex.exec(s.source);
         if (capturing === undefined || capturing === null) {
             return undefined;
         }
         forward(s, capturing);
-        return new LinkDefinition('', '');
+        return new LinkDefinition(capturing[1], capturing[2], capturing[3]);
     };
 }
 
@@ -328,7 +325,6 @@ class HTMLBlockRule implements Rule {
             return new HTMLBlock(capturing[0]);
         }
 
-        // window.console.log("");
         return undefined
     };
 }
