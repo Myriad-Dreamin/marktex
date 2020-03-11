@@ -31,7 +31,9 @@ import {
     InlinePlain,
     Link,
     LinkDefinition,
-    Paragraph
+    NewLine,
+    Paragraph,
+    Quotes
 } from "./token";
 
 const expect = chai.expect;
@@ -496,6 +498,45 @@ describe("QuotesRule", () => {
     let rule: QuotesRule = new QuotesRule();
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    match({
+        text: "> ",
+        matchedLength: "> ".length,
+        expectedElement: new Quotes([]),
+    });
+    match({
+        text: "> \n",
+        matchedLength: "> \n".length,
+        expectedElement: new Quotes([new NewLine("\n")]),
+    });
+    match({
+        text: "> a\n",
+        matchedLength: "> a\n".length,
+        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\n")])]),
+    });
+    match({
+        text: "> a\n> a\n",
+        matchedLength: "> a\n> a\n".length,
+        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\na\n")])]),
+    });
+    match({
+        text: "> a\n\n> a\n",
+        matchedLength: "> a\n".length,
+        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\n")])]),
+    });
+    match({
+        text: "> a\nqwq\n> a\n",
+        matchedLength: "> a\nqwq\n> a\n".length,
+        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\nqwq\na\n")])]),
+    });
+    match({
+        text: "> a\nqwq\n>\n> a\n",
+        matchedLength: "> a\nqwq\n>\n> a\n".length,
+        expectedElement: new Quotes([
+            new Paragraph([new InlinePlain("a\nqwq\n\n")]),
+            new Paragraph([new InlinePlain("a\n")])
+        ]),
+    });
+    notMatch({text: "\n"});
 });
 
 describe("ListBlockRule", () => {

@@ -14,6 +14,7 @@ import {
     ListBlock,
     ListElement,
     MaybeToken,
+    NewLine,
     Paragraph,
     Quotes
 } from "./token";
@@ -88,6 +89,23 @@ const validTags: HTMLTagsRegexps = function (): HTMLTagsRegexps {
         // attribute_value,
     };
 }();
+
+class NewLineRule implements Rule {
+    readonly name: string = "NewLine";
+    readonly description: string = "Standard Markdown Block Rule";
+
+    public readonly regex: RegExp = /^\n+/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = this.regex.exec(s.source);
+        if (capturing === undefined || capturing === null) {
+            return undefined;
+        }
+
+        forward(s, capturing);
+        return new NewLine(capturing[0]);
+    };
+}
 
 class ParagraphRule implements Rule {
     readonly name: string = "Paragraph";
@@ -212,7 +230,7 @@ class QuotesRule implements Rule {
     readonly name: string = "Quotes";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^( *>[^\n]+(?:\n[^\n]+)*\n*)+/;
+    public readonly regex: RegExp = /^( *>[^\n]*(?:\n[^\n]+)*\n?)+/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -457,6 +475,7 @@ const inlineRules: Rule[] = [
 ];
 
 const blockRules: Rule[] = [
+    new NewLineRule(),
     new CodeBlockRule(),
     new LinkDefinitionRule(),
     // new HTMLBlockRule(),
@@ -470,6 +489,7 @@ const blockRules: Rule[] = [
 // noinspection JSUnusedGlobalSymbols
 export function newBlockRules(enableHtml: boolean): Rule[] {
     let rules0: Rule[] = [
+        new NewLineRule(),
         new CodeBlockRule(),
         new LinkDefinitionRule(),
     ];

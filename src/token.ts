@@ -1,5 +1,6 @@
 enum TokenType {
     Paragraph,
+    NewLine,
     Quotes,
     ListBlock,
     Horizontal,
@@ -50,6 +51,16 @@ interface BlockElement extends Token {
 
 interface InlineElement extends Token {
 }
+
+class NewLine implements BlockElement {
+    readonly token_type = TokenType.NewLine;
+    public content: string;
+
+    constructor(content: string) {
+        this.content = content;
+    }
+}
+
 
 /*
 (.*\n{1...1})+
@@ -447,6 +458,7 @@ export {
 
 export {
     Paragraph,
+    NewLine,
     Quotes,
     ListBlock,
     Horizontal,
