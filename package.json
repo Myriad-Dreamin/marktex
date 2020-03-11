@@ -7,8 +7,10 @@
     "build": "tsc",
     "main": "node dist/index.js",
     "exec": "tsc && node dist/index.js",
-    "test": "./node_modules/.bin/mocha.cmd --reporter spec --require ts-node/register src/**/*.test.ts",
-    "bench": "./node_modules/.bin/mocha.cmd --prof --reporter spec --require ts-node/register src/**/*.bench.ts"
+    "t": "./node_modules/.bin/mocha.cmd --reporter spec --require ts-node/register",
+    "b": "./node_modules/.bin/mocha.cmd --prof --reporter spec --require ts-node/register",
+    "bench": "yarn run b src/**/*.bench.ts",
+    "test": "yarn run t src/**/*.test.ts"
   },
   "repository": "github.com/Myriad-Dreamin/marktex",
   "author": "Myriad-Dreamin <camiyoru@gmail.com>",

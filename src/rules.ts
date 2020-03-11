@@ -247,7 +247,7 @@ class HeaderBlockRule implements Rule {
     readonly name: string = "HeaderBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly atxRegex: RegExp = /^(#{1,6}) ([^#]*)#*(?:\n|$)/;
+    public readonly atxRegex: RegExp = /^(#{1,6}) ([^#\n]*)#*(?:\n|$)/;
     public readonly setextRegex: RegExp = /^([^\n]+)\n=+(?:\n|$)/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {

@@ -9,7 +9,7 @@ export const expect = chai.expect;
 export type elementMatcher = ({text, matchedLength: number, expectedElement}: { text: string, matchedLength: number, expectedElement: any }) => void;
 export type textAcceptor = ({text}: { text: string }) => void;
 
-function createContext(): RuleContext {
+export function createContext(): RuleContext {
     return new Lexer({inlineRules, blockRules}, {validTags});
 }
 
@@ -37,4 +37,14 @@ export function benchText(suite: Benchmark.Suite, rule: Rule, ctx: RuleContext =
             rule.match(new StringStream(text), ctx);
         });
     }
+}
+
+
+export function onRun(rule: Rule, callback: (runner: textAcceptor) => void) {
+
+    let suite = new Benchmark.Suite;
+    callback(benchText(suite, rule));
+    suite.on('cycle', function (event: Benchmark.Event) {
+        console.log(String(event.target));
+    }).run({'async': true});
 }
