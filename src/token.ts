@@ -412,11 +412,11 @@ open the header. (The number of opening hashes determines the header level.) :
 */
 class HeaderBlock implements BlockElement {
     readonly token_type = TokenType.HeaderBlock;
-    public content: string;
+    public inlineElements: InlineElement[];
     public level: number;
 
-    constructor(content: string, level: number) {
-        this.content = content;
+    constructor(inlineElements: InlineElement[], level: number) {
+        this.inlineElements = inlineElements;
         this.level = level;
     }
 }

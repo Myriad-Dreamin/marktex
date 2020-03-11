@@ -247,29 +247,29 @@ class HeaderBlockRule implements Rule {
     readonly name: string = "HeaderBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly atxRegex: RegExp = /^(#{1,6}) ([^#\n]*)#*(?:\n|$)/;
+    public readonly atxRegex: RegExp = /^(#{1,6}) ([^\n]*?)#*(?:\n|$)/;
     public readonly setextRegex: RegExp = /^([^\n]+)\n=+(?:\n|$)/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         return this.matchATX(s, ctx) || this.matchSetext(s, ctx);
     };
 
-    matchATX(s: StringStream, _: RuleContext): MaybeToken {
+    matchATX(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.atxRegex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
-        return new HeaderBlock(capturing[2], capturing[1].length);
+        return new HeaderBlock(ctx.lexInlineElements(new StringStream(capturing[2])), capturing[1].length);
     }
 
-    matchSetext(s: StringStream, _: RuleContext): MaybeToken {
+    matchSetext(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.setextRegex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
-        return new HeaderBlock(capturing[1], 1);
+        return new HeaderBlock(ctx.lexInlineElements(new StringStream(capturing[1])), 1);
     }
 }
 

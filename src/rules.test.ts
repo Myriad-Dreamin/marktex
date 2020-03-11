@@ -438,22 +438,22 @@ describe("HeaderBlockRule", () => {
     match({
         text: "# qwq",
         matchedLength: "# qwq".length,
-        expectedElement: new HeaderBlock("qwq", 1),
+        expectedElement: new HeaderBlock([new InlinePlain("qwq")], 1),
     });
     match({
         text: "### qwq",
         matchedLength: "### qwq".length,
-        expectedElement: new HeaderBlock("qwq", 3),
+        expectedElement: new HeaderBlock([new InlinePlain("qwq")], 3),
     });
     match({
         text: "q\n=",
         matchedLength: "q\n=".length,
-        expectedElement: new HeaderBlock("q", 1),
+        expectedElement: new HeaderBlock([new InlinePlain("q")], 1),
     });
     match({
         text: "qwq\n=",
         matchedLength: "qwq\n=".length,
-        expectedElement: new HeaderBlock("qwq", 1),
+        expectedElement: new HeaderBlock([new InlinePlain("qwq")], 1),
     });
     notMatch({text: "\n"});
     notMatch({text: "qwq\n"});
