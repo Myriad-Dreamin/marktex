@@ -30,10 +30,8 @@ class Lexer {
         let e: MaybeToken = undefined, t: MaybeToken = undefined;
         while (!s.eof) {
             t = this.lexInlineElement(s);
-            if (e && e.token_type == TokenType.InlinePlain) {
-                if (t.token_type == TokenType.InlinePlain) {
-                    (<InlinePlain>e).content += (<InlinePlain>t).content;
-                }
+            if (e && e.token_type == TokenType.InlinePlain && t.token_type == TokenType.InlinePlain) {
+                (<InlinePlain>e).content += (<InlinePlain>t).content;
             } else {
                 r.push(t);
                 e = t;

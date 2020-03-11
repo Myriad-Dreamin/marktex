@@ -20,7 +20,7 @@ class StringStream {
     }
 
     get eof(): boolean {
-        return this._source !== "";
+        return this._source === "";
     }
 
     forward(n: number = 1) {

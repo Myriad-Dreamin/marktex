@@ -93,7 +93,7 @@ class ParagraphRule implements Rule {
     readonly name: string = "Paragraph";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^(.+\n)+\n*/;
+    public readonly regex: RegExp = /^(?:.\n?)+\n*/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -231,7 +231,7 @@ class HorizontalRule implements Rule {
     readonly name: string = "Horizontal";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^((?:(\* *){3,}|(- *){3,})\n?)/;
+    public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})\n?/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -249,7 +249,7 @@ class CodeBlockRule implements Rule {
     readonly name: string = "CodeBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^((?: {4}|\t)[^\n]+\n{0,2})+/;
+    public readonly regex: RegExp = /^((?: {4}|\t)[^\n]+(\n|$))+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -258,7 +258,7 @@ class CodeBlockRule implements Rule {
         }
 
         forward(s, capturing);
-        return new CodeBlock(capturing[0].replace(/^{4}|\t/gm, ''));
+        return new CodeBlock(capturing[0].replace(/^(?: {4}|\t)/gm, ''));
     };
 }
 
@@ -266,8 +266,8 @@ class HeaderBlockRule implements Rule {
     readonly name: string = "HeaderBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly atxRegex: RegExp = /^(#{1,6}) ([^#]*)#*\n?/;
-    public readonly setextRegex: RegExp = /^((?: {4}|\t)[^\n]+\n{0,2})+/;
+    public readonly atxRegex: RegExp = /^(#{1,6}) ([^#]*)#*(?:\n|$)/;
+    public readonly setextRegex: RegExp = /^([^\n]+)\n=+(?:\n|$)/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         return this.matchATX(s, ctx) || this.matchSetext(s, ctx);
@@ -293,9 +293,9 @@ class HeaderBlockRule implements Rule {
 }
 
 class LinkDefinitionRule implements Rule {
-    readonly name: string = "LinkDefinitionRule";
+    readonly name: string = "LinkDefinition";
     readonly description: string = "Standard Markdown Block Rule";
-    public readonly regex: RegExp = /^ *\[([^\]]+)]: *<?([^\s>]+)>?(?: +["(]([^\n]*)[")])? *(?:\n|$)/;
+    public readonly regex: RegExp = /^ *\[([^\]]+)]: *<?([^\s>]+)>?(?: +["'(]([^\n]*)["')])? *(?:\n|$)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -330,7 +330,7 @@ class HTMLBlockRule implements Rule {
 }
 
 class InlinePlainExceptSpecialMarksRule implements Rule {
-    readonly name: string = "InlinePlainExceptSpecialMarksRule";
+    readonly name: string = "InlinePlainExceptSpecialMarks";
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(?:\\[<`_*\[]|[^<`_*\[])+/;
@@ -365,13 +365,12 @@ class InlinePlainRule implements Rule {
 
 
 class LinkOrImageRule implements Rule {
-    readonly name: string = "LinkRule";
+    readonly name: string = "Link";
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
     public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\s*\[([^\]]*)]/;
 
-    //\[([^\]]*)\]
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         return this.matchInline(s, ctx) || this.matchRef(s, ctx);
     };
@@ -459,7 +458,7 @@ const inlineRules: Rule[] = [
 
 const blockRules: Rule[] = [
     new CodeBlockRule(),
-    // new LinkDefinitionRule(),
+    new LinkDefinitionRule(),
     // new HTMLBlockRule(),
     new QuotesRule(),
     new HeaderBlockRule(),

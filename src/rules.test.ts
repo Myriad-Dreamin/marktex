@@ -21,7 +21,18 @@ import {
 } from "./rules";
 import {Lexer} from "./lexer";
 import {StringStream} from "./source";
-import {Emphasis, ImageLink, InlineCode, InlinePlain, Link} from "./token";
+import {
+    CodeBlock,
+    Emphasis,
+    HeaderBlock,
+    Horizontal,
+    ImageLink,
+    InlineCode,
+    InlinePlain,
+    Link,
+    LinkDefinition,
+    Paragraph
+} from "./token";
 
 const expect = chai.expect;
 
@@ -291,30 +302,194 @@ describe("HorizontalRule", () => {
     let rule: HorizontalRule = new HorizontalRule();
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    match({
+        text: "---",
+        matchedLength: "---".length,
+        expectedElement: new Horizontal(),
+    });
+    match({
+        text: "-    --",
+        matchedLength: "-    --".length,
+        expectedElement: new Horizontal(),
+    });
+    match({
+        text: "--------",
+        matchedLength: "--------".length,
+        expectedElement: new Horizontal(),
+    });
+    match({
+        text: "--\t---    ---",
+        matchedLength: "--\t---    ---".length,
+        expectedElement: new Horizontal(),
+    });
+    match({
+        text: "-    -\t---    ---",
+        matchedLength: "-    -\t---    ---".length,
+        expectedElement: new Horizontal(),
+    });
+    match({
+        text: "-    -\t---    ---\n\n",
+        matchedLength: "-    -\t---    ---\n".length,
+        expectedElement: new Horizontal(),
+    });
+    match({
+        text: "-    -\t-\n--    ---\n\n",
+        matchedLength: "-    -\t-\n".length,
+        expectedElement: new Horizontal(),
+    });
+    notMatch({text: " ---"});
+    notMatch({text: "-*-"});
+    notMatch({text: "-**"});
+    notMatch({text: "-***"});
 });
 
 describe("LinkDefinitionRule", () => {
     let rule: LinkDefinitionRule = new LinkDefinitionRule();
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
-});
-
-describe("CodeBlockRule", () => {
-    let rule: CodeBlockRule = new CodeBlockRule();
-    let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
-});
-
-describe("HeaderBlockRule", () => {
-    let rule: HeaderBlockRule = new HeaderBlockRule();
-    let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    match({
+        text: "[ ]: q",
+        matchedLength: "[ ]: q".length,
+        expectedElement: new LinkDefinition(" ", "q"),
+    });
+    match({
+        text: '[foo]: http://example.com/  "Optional Title Here"',
+        matchedLength: '[foo]: http://example.com/  "Optional Title Here"'.length,
+        expectedElement: new LinkDefinition("foo", "http://example.com/", 'Optional Title Here'),
+    });
+    match({
+        text: "[foo]: http://example.com/  'Optional Title Here'",
+        matchedLength: "[foo]: http://example.com/  'Optional Title Here'".length,
+        expectedElement: new LinkDefinition("foo", "http://example.com/", 'Optional Title Here'),
+    });
+    match({
+        text: "[foo]: http://example.com/  (Optional Title Here)",
+        matchedLength: "[foo]: http://example.com/  (Optional Title Here)".length,
+        expectedElement: new LinkDefinition("foo", "http://example.com/", 'Optional Title Here'),
+    });
+    notMatch({text: "[]: q"});
+    notMatch({text: "[q]: "});
+    // notMatch({text: "[q]: ''"});
+    match({
+        text: "[q]: ''",
+        matchedLength: "[q]: ''".length,
+        expectedElement: new LinkDefinition("q", "''", undefined),
+    });
 });
 
 describe("ParagraphRule", () => {
     let rule: ParagraphRule = new ParagraphRule();
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    match({
+        text: "a",
+        matchedLength: "a".length,
+        expectedElement: new Paragraph(
+            [new InlinePlain("a")],
+        ),
+    });
+    match({
+        text: "www**b**x__qwq__*233*",
+        matchedLength: "www**b**x__qwq__*233*".length,
+        expectedElement: new Paragraph(
+            [
+                new InlinePlain("www"),
+                new Emphasis("b", 2),
+                new InlinePlain("x"),
+                new Emphasis("qwq", 2),
+                new Emphasis("233", 1),
+            ],
+        ),
+    });
+    match({
+        text: "a\n\nqwq",
+        matchedLength: "a\n\n".length,
+        expectedElement: new Paragraph(
+            [new InlinePlain("a\n\n")],
+        ),
+    });
+    match({
+        text: "a\nqwq",
+        matchedLength: "a\nqwq".length,
+        expectedElement: new Paragraph(
+            [new InlinePlain("a\nqwq")],
+        ),
+    });
+    notMatch({text: "\n"});
+    notMatch({text: "\ntest"});
+    notMatch({text: "\n\ntest"});
+});
+
+describe("CodeBlockRule", () => {
+    let rule: CodeBlockRule = new CodeBlockRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    match({
+        text: "\tqwq",
+        matchedLength: "\tqwq".length,
+        expectedElement: new CodeBlock("qwq"),
+    });
+    match({
+        text: "    qwq",
+        matchedLength: "    qwq".length,
+        expectedElement: new CodeBlock("qwq"),
+    });
+    match({
+        text: "     qwq",
+        matchedLength: "     qwq".length,
+        expectedElement: new CodeBlock(" qwq"),
+    });
+    match({
+        text: "\tqwq\tqwq",
+        matchedLength: "\tqwq\tqwq".length,
+        expectedElement: new CodeBlock("qwq\tqwq"),
+    });
+    match({
+        text: "\tqwq\t\nqwq",
+        matchedLength: "\tqwq\t\n".length,
+        expectedElement: new CodeBlock("qwq\t\n"),
+    });
+    match({
+        text: "\tqwq\t\n\tqwq",
+        matchedLength: "\tqwq\t\n\tqwq".length,
+        expectedElement: new CodeBlock("qwq\t\nqwq"),
+    });
+    match({
+        text: "\tqwq\t\nqwq\n\tqwq",
+        matchedLength: "\tqwq\t\n".length,
+        expectedElement: new CodeBlock("qwq\t\n"),
+    });
+    notMatch({text: "\n"});
+});
+
+describe("HeaderBlockRule", () => {
+    let rule: HeaderBlockRule = new HeaderBlockRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    match({
+        text: "# qwq",
+        matchedLength: "# qwq".length,
+        expectedElement: new HeaderBlock("qwq", 1),
+    });
+    match({
+        text: "### qwq",
+        matchedLength: "### qwq".length,
+        expectedElement: new HeaderBlock("qwq", 3),
+    });
+    match({
+        text: "q\n=",
+        matchedLength: "q\n=".length,
+        expectedElement: new HeaderBlock("q", 1),
+    });
+    match({
+        text: "qwq\n=",
+        matchedLength: "qwq\n=".length,
+        expectedElement: new HeaderBlock("qwq", 1),
+    });
+    notMatch({text: "\n"});
+    notMatch({text: "qwq\n"});
+    notMatch({text: "\n===="});
+    notMatch({text: "####### qwq"});
 });
 
 describe("QuotesRule", () => {
