@@ -31,6 +31,8 @@ import {
     InlinePlain,
     Link,
     LinkDefinition,
+    ListBlock,
+    ListElement,
     NewLine,
     Paragraph,
     Quotes
@@ -543,10 +545,56 @@ describe("ListBlockRule", () => {
     let rule: ListBlockRule = new ListBlockRule();
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+
+    match({
+        text: "* ",
+        matchedLength: "* ".length,
+        expectedElement: new ListBlock(false, [new ListElement('*')]),
+    });
+    match({
+        text: "* a",
+        matchedLength: "* a".length,
+        expectedElement: new ListBlock(false, [
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('a')])]
+            )]),
+    });
+    match({
+        text: "* a\n* b",
+        matchedLength: "* a\n* b".length,
+        expectedElement: new ListBlock(false, [
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('a\n')])]
+            ),
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('b')])]
+            ),
+        ]),
+    });
+    match({
+        text: "* a\n\n* b",
+        matchedLength: "* a\n\n* b".length,
+        expectedElement: new ListBlock(false, [
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('a\n')])],
+                true,
+            ),
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('b')])],
+                true,
+            ),
+        ]),
+    });
 });
 
 describe("HTMLBlockRule", () => {
-    let rule: HTMLBlockRule = new HTMLBlockRule();
-    let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    // let rule: HTMLBlockRule = new HTMLBlockRule();
+    // let match: elementMatcher = itWillMatchElement(rule);
+    // let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+
 });

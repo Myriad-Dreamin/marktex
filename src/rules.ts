@@ -98,7 +98,7 @@ class NewLineRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -115,7 +115,7 @@ class ParagraphRule implements Rule {
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -131,97 +131,60 @@ class ParagraphRule implements Rule {
 class ListBlockRule implements Rule {
     readonly name: string = "ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
+    public static readonly blankRegex = /^[\t\v\v\f ]*\n/;
+    public static readonly listBlockRegex = /^((?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
+    public static readonly replaceRegex = /^(?: {4}|\t)/gm;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
+        let ordered: boolean;
         if ("*+-".includes(s.source[0])) {
-            if (s.source[1] !== ' ') {
-                return undefined;
-            }
-            let m: string = s.source[0];
-
-            s.forward(2);
-            return this.matchUnorderedList(m, new ListBlock(false), s, ctx);
+            ordered = false;
         } else if ('0' <= s.source[0] && s.source[0] <= '9') {
-            return ListBlockRule.matchOrderedListNumber(s, (num) => this.matchOrderedList(num, new ListBlock(true), s, ctx));
-        }
-        return
-    };
-
-    private matchUnorderedList(u: string, l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock {
-        for (let i = 0; ; i++) {
-            if (!s.source[i]) {
-                l.listElements.push(new ListElement(u, ctx.lexBlockElements(
-                    new StringStream(s.source.replace(/^(?: {4}|\t)/gm, '')),
-                )));
-                s.forward(i);
-                return l;
-            }
-
-            if (s.source[i] === '\n') {
-                let m: string | undefined = s.source[i + 1];
-                if (!m || "*+-".includes(m)) {
-                    l.listElements.push(new ListElement(u, ctx.lexBlockElements(
-                        new StringStream(s.source.substr(0, i + 1).replace(/^(?: {4}|\t)/gm, '')),
-                    )));
-                    s.forward(i + 1);
-                    if (!m || s.source[1] === ' ') {
-                        return l;
-                    }
-
-                    s.forward(2);
-                    return this.matchUnorderedList(m, l, s, ctx);
-                }
-            }
-        }
-    }
-
-    private matchOrderedList(u: string, l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock {
-        for (let i = 0; ; i++) {
-            if (!s.source[i]) {
-                l.listElements.push(new ListElement(u, ctx.lexBlockElements(
-                    new StringStream(s.source.replace(/^(?: {4}|\t)/gm, '')),
-                )));
-                s.forward(i);
-                return l;
-            }
-
-            if (s.source[i] === '\n') {
-                let m: string | undefined = s.source[i + 1];
-                if (!m || "0123456789".includes(m)) {
-                    l.listElements.push(new ListElement(u, ctx.lexBlockElements(
-                        new StringStream(s.source.substr(0, i + 1).replace(/^(?: {4}|\t)/gm, '')),
-                    )));
-                    s.forward(i + 1);
-                    if (!m) {
-                        return l;
-                    }
-
-                    return ListBlockRule.matchOrderedListNumber(
-                        s, (num) => this.matchOrderedList(num, l, s, ctx)) || l;
-                }
-            }
-        }
-    }
-
-    private static matchOrderedListNumber(
-        s: StringStream, callback: (num: string) => ListBlock): ListBlock | undefined {
-        for (let i = 0; ; i++) {
-            if (s.source[i] == '.') {
-                if (s.source[i + 1] == ' ') {
-                    let m: string = s.source.substr(0, i);
-
-                    s.forward(i + 2);
-                    return callback(m);
-                } else {
-                    return undefined;
-                }
-            }
-
-            if ('0' <= s.source[i] && s.source[i] <= '9') {
-                continue;
-            }
+            ordered = true;
+        } else {
             return undefined;
         }
+        return ListBlockRule.matchBlock(new ListBlock(ordered), s, ctx);
+    };
+
+    private static matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
+        let nextMarker: string | undefined;
+        nextMarker = l.lookAhead(s);
+        if (!nextMarker) {
+            return undefined;
+        }
+        let blockContent: string, marker: string | undefined, lastSeparated = false;
+        for (blockContent = '', marker = nextMarker, nextMarker = undefined;
+             marker !== undefined;
+             blockContent = '', marker = nextMarker, nextMarker = undefined) {
+            do {
+                let capturing = ListBlockRule.listBlockRegex.exec(s.source);
+                if (capturing === null) {
+                    throw new Error("does not match unordered list, which violate the matchBlock.call convention");
+                }
+                forward(s, capturing);
+                blockContent += capturing[0];
+            } while (l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
+            let element = new ListElement(marker, ctx.lexBlockElements(
+                new StringStream(blockContent.replace(ListBlockRule.replaceRegex, '')),
+            ));
+            if (!nextMarker) {
+                let capturing = ListBlockRule.blankRegex.exec(s.source);
+                if (capturing !== null) {
+                    forward(s, capturing);
+                    element.blankSeparated = true;
+                    lastSeparated = true;
+                    if (l.lookAhead0(s)) {
+                        nextMarker = l.lookAhead(s);
+                    }
+                } else {
+                    element.blankSeparated = lastSeparated;
+                    lastSeparated = false;
+                }
+            }
+            l.listElements.push(element);
+        }
+        return l;
     }
 }
 
@@ -234,7 +197,7 @@ class QuotesRule implements Rule {
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -253,7 +216,7 @@ class HorizontalRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -271,7 +234,7 @@ class CodeBlockRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -293,7 +256,7 @@ class HeaderBlockRule implements Rule {
 
     matchATX(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.atxRegex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
@@ -302,7 +265,7 @@ class HeaderBlockRule implements Rule {
 
     matchSetext(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.setextRegex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
@@ -317,7 +280,7 @@ class LinkDefinitionRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
@@ -335,7 +298,7 @@ class HTMLBlockRule implements Rule {
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let ot: OpenTagRegExp = ctx.options.validTags.open_tag;
         let capturing = ot.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -355,7 +318,7 @@ class InlinePlainExceptSpecialMarksRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -372,7 +335,7 @@ class InlinePlainRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -395,7 +358,7 @@ class LinkOrImageRule implements Rule {
 
     matchInline(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
@@ -409,7 +372,7 @@ class LinkOrImageRule implements Rule {
 
     matchRef(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.refRegex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
@@ -430,7 +393,7 @@ class EmphasisRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 
@@ -457,7 +420,7 @@ class InlineCodeRule implements Rule {
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
-        if (capturing === undefined || capturing === null) {
+        if (capturing === null) {
             return undefined;
         }
 

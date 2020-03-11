@@ -1,3 +1,5 @@
+import {StringStream} from "./source";
+
 enum TokenType {
     Paragraph,
     NewLine,
@@ -135,10 +137,12 @@ class Quotes implements BlockElement {
 class ListElement {
     public innerBlocks: BlockElement[];
     public marker: string;
+    public blankSeparated: boolean;
 
-    constructor(marker: string, innerBlocks: BlockElement[] = []) {
+    constructor(marker: string, innerBlocks: BlockElement[] = [], blankSeparated: boolean = false) {
         this.marker = marker;
         this.innerBlocks = innerBlocks;
+        this.blankSeparated = blankSeparated;
     }
 }
 
@@ -246,6 +250,45 @@ class ListBlock implements BlockElement {
     constructor(ordered: boolean, listElements: ListElement[] = []) {
         this.listElements = listElements;
         this.ordered = ordered;
+    }
+
+    public lookAhead(s: StringStream): string | undefined {
+        if (this.ordered) {
+            return ListBlock.lookAheadOrderedListNumber(s);
+        } else {
+            return ListBlock.lookAheadUnorderedListMarker(s);
+        }
+    }
+
+    public lookAhead0(s: StringStream): boolean {
+        if (this.ordered) {
+            return '0' <= s.source[0] && s.source[0] <= '9'
+        } else {
+            return '*+-'.includes(s.source[0]);
+        }
+    }
+
+    public static lookAheadOrderedListNumber(s: StringStream): string | undefined {
+        for (let i = 0; ; i++) {
+            if ('0' <= s.source[i] && s.source[i] <= '9') {
+                continue;
+            }
+            if (s.source[i] == '.' && s.source[i + 1] == ' ') {
+                let m: string = s.source.substr(0, i);
+                s.forward(i + 2);
+                return m;
+            }
+            return undefined;
+        }
+    }
+
+    public static lookAheadUnorderedListMarker(s: StringStream): string | undefined {
+        if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
+            let m: string = s.source[0];
+            s.forward(2);
+            return m;
+        }
+        return undefined;
     }
 }
 
