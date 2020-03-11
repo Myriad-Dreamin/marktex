@@ -13,7 +13,7 @@ import {
 } from "./rules";
 import {Lexer} from "./lexer";
 import {StringStream} from "./source";
-import {ImageLink, InlinePlain, Link} from "./token";
+import {Emphasis, ImageLink, InlineCode, InlinePlain, Link} from "./token";
 
 const expect = chai.expect;
 
@@ -223,7 +223,18 @@ describe("EmphasisRule", () => {
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
 
-    //todo
+    match({
+        text: "**_**",
+        matchedLength: "**_**".length,
+        expectedElement: new Emphasis("_", 2),
+    });
+    match({
+        text: "*_**",
+        matchedLength: "*_*".length,
+        expectedElement: new Emphasis("_", 1),
+    });
+    notMatch({text: "**_*"});
+    notMatch({text: "***_**"});
 });
 
 describe("InlineCodeRule", () => {
@@ -231,22 +242,39 @@ describe("InlineCodeRule", () => {
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
 
-    //todo
-//`gg``
-//
-// `dsf`
-//
-// ```
-//
-// ````
-//
-// ``a`b``
-//
-//
-// ``a`b`c``
-//
-//
-// ``abc``d``
-// ``abc`a`d``
-
+    match({
+        text: "`dsf`",
+        matchedLength: "`dsf`".length,
+        expectedElement: new InlineCode("dsf"),
+    });
+    match({
+        text: "`gg``",
+        matchedLength: "`gg`".length,
+        expectedElement: new InlineCode("gg"),
+    });
+    match({
+        text: "``a`b``",
+        matchedLength: "``a`b``".length,
+        expectedElement: new InlineCode("a`b"),
+    });
+    match({
+        text: "``a`b`c``",
+        matchedLength: "``a`b`c``".length,
+        expectedElement: new InlineCode("a`b`c"),
+    });
+    match({
+        text: "``abc``d``",
+        matchedLength: "``abc``".length,
+        expectedElement: new InlineCode("abc"),
+    });
+    match({
+        text: "``abc`a`d``",
+        matchedLength: "``abc`a`d``".length,
+        expectedElement: new InlineCode("abc`a`d"),
+    });
+    notMatch({text: "```"});
+    notMatch({text: "```\n````"});
+    notMatch({text: "````"});
+    notMatch({text: "`````"});
+    notMatch({text: "``````"});
 });

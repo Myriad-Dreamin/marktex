@@ -416,13 +416,18 @@ class EmphasisRule implements Rule {
         if (capturing === undefined || capturing === null) {
             return undefined;
         }
-        let l: string = capturing[1], r: string = capturing[3];
+
+        let l: string = capturing[1] || capturing[4], r: string = capturing[3] || capturing[6];
         if (l !== r) {
+            if (l.length < r.length) {
+                s.forward(capturing[0].length - 1);
+                return new Emphasis(capturing[2] || capturing[5], l.length);
+            }
             return undefined;
         }
 
         forward(s, capturing);
-        return new Emphasis(capturing[2], l.length);
+        return new Emphasis(capturing[2] || capturing[5], l.length);
     };
 }
 
@@ -431,7 +436,7 @@ class InlineCodeRule implements Rule {
     readonly name: string = "InlineCode";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^``([^`\n\r\u2028\u2029](?:`[^`\n\r\u2028\u2029])?)+``|`([^`\n\r\u2028\u2029]+?)`/;
+    public readonly regex: RegExp = /^(?:``([^`\n\r\u2028\u2029](?:`?[^`\n\r\u2028\u2029])*)``|`([^`\n\r\u2028\u2029]+?)`)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -440,7 +445,7 @@ class InlineCodeRule implements Rule {
         }
 
         forward(s, capturing);
-        return new InlineCode(capturing[1]);
+        return new InlineCode(capturing[1] || capturing[2]);
     };
 }
 
