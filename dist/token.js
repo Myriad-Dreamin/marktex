@@ -232,7 +232,7 @@ class ListBlock {
             if ('0' <= s.source[i] && s.source[i] <= '9') {
                 continue;
             }
-            if (s.source[i] == '.' && s.source[i + 1] == ' ') {
+            if (s.source[i] === '.' && s.source[i + 1] === ' ') {
                 let m = s.source.substr(0, i);
                 s.forward(i + 2);
                 return m;
@@ -242,7 +242,7 @@ class ListBlock {
     }
 
     static lookAheadUnorderedListMarker(s) {
-        if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
+        if ('*+-'.includes(s.source[0]) && s.source[1] === ' ') {
             let m = s.source[0];
             s.forward(2);
             return m;

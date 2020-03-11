@@ -111,7 +111,7 @@ class ParagraphRule implements Rule {
     readonly name: string = "Paragraph";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^(?:.\n?)+\n*/;
+    public readonly regex: RegExp = /^(?:.(?:\n|$)?)+/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -131,8 +131,8 @@ class ParagraphRule implements Rule {
 class ListBlockRule implements Rule {
     readonly name: string = "ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
-    public static readonly blankRegex = /^[\t\v\v\f ]*\n/;
-    public static readonly listBlockRegex = /^((?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
+    public static readonly blankRegex = /^[\t\v\f ]*\n/;
+    public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
     public static readonly replaceRegex = /^(?: {4}|\t)/gm;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {

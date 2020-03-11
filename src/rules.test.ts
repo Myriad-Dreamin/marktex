@@ -372,9 +372,9 @@ describe("ParagraphRule", () => {
     });
     match({
         text: "a\n\nqwq",
-        matchedLength: "a\n\n".length,
+        matchedLength: "a\n".length,
         expectedElement: new Paragraph(
-            [new InlinePlain("a\n\n")],
+            [new InlinePlain("a\n")],
         ),
     });
     match({

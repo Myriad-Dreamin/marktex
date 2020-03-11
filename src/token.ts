@@ -137,6 +137,7 @@ class Quotes implements BlockElement {
 class ListElement {
     public innerBlocks: BlockElement[];
     public marker: string;
+    // is it good?
     public blankSeparated: boolean;
 
     constructor(marker: string, innerBlocks: BlockElement[] = [], blankSeparated: boolean = false) {
@@ -263,9 +264,19 @@ class ListBlock implements BlockElement {
     public lookAhead0(s: StringStream): boolean {
         if (this.ordered) {
             return '0' <= s.source[0] && s.source[0] <= '9'
-        } else {
-            return '*+-'.includes(s.source[0]);
+        } else if ('*+-'.includes(s.source[0])) {
+            let j = 0;
+            for (let i = 0; s.source[i] && s.source[i] != '\n'; i++) {
+                if (s.source[i] == s.source[0]) {
+                    j++;
+                } else if (!'\t\r\v\f '.includes(s.source[i])) {
+                    j = 0;
+                    break;
+                }
+            }
+            return j < 3;
         }
+        return false;
     }
 
     public static lookAheadOrderedListNumber(s: StringStream): string | undefined {
