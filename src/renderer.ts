@@ -34,13 +34,14 @@ export type RenderMiddleware = (ctx: RenderContext) => void;
 
 export interface RenderOptions {
     originStack?: RenderMiddleware[],
+    wrapCodeClassTag?: (language: string) => string,
     highlight?: HighlightFunc,
 }
 
 export class Renderer {
     protected parser: Parser;
     private stack: RenderMiddleware[];
-    protected highlight: HighlightFunc;
+    protected highlight?: HighlightFunc;
 
     public constructor(parser: Parser, opts?: RenderOptions) {
         this.parser = parser;
@@ -49,9 +50,9 @@ export class Renderer {
             return code;
         };
         if (opts) {
-            if (opts.highlight) {
-                this.highlight = opts.highlight;
-                this.applyHighlightOption();
+            this.highlight = opts.highlight;
+            if (opts.wrapCodeClassTag) {
+                this.wrapCodeClassTag = opts.wrapCodeClassTag;
             }
         }
     }
@@ -183,28 +184,20 @@ export class Renderer {
         // ignore it
     }
 
-    protected renderCodeBlock(ctx: RenderContext, el: BlockElement) {
-        ctx.html += '<pre><code>' +
-            (<CodeBlock>(el)).body +
-            +'</pre></code>';
+    public wrapCodeClassTag(language: string): string {
+        return 'lang-' + language;
     }
 
-    private highlightOptionApplied?: boolean;
-
-    protected applyHighlightOption() {
-        if (!this.highlightOptionApplied) {
-            this.highlightOptionApplied = true;
-            let renderFunc = this.renderCodeBlock;
-            this.renderCodeBlock = function (ctx: RenderContext, el: BlockElement) {
-                let codeBlock: CodeBlock = <CodeBlock>(el);
-
-                if (codeBlock.language) {
-                    this.highlight(codeBlock.body, codeBlock.language);
-                }
-
-                renderFunc(ctx, el);
-            }
+    protected renderCodeBlock(ctx: RenderContext, el: BlockElement) {
+        let codeBlock: CodeBlock = <CodeBlock>(el);
+        if (codeBlock.language && this.highlight) {
+            codeBlock.body = this.highlight(codeBlock.body, codeBlock.language);
         }
+
+        ctx.html += '<pre><code' +
+            (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
+            (<CodeBlock>(el)).body +
+            +'</pre></code>';
     }
 
     protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {
