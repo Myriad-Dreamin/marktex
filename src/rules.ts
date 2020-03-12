@@ -25,13 +25,13 @@ import {HTMLTagsRegexps, OpenTagRegExp, RegExpWithTagName, RuleOptions} from "./
 interface RuleContext {
     options: RuleOptions
 
-    lexBlockElement(source: StringStream): BlockElement
+    parseBlockElement(source: StringStream): BlockElement
 
-    lexInlineElement(source: StringStream): InlineElement
+    parseInlineElement(source: StringStream): InlineElement
 
-    lexBlockElements(source: StringStream): BlockElement[]
+    parseBlockElements(source: StringStream): BlockElement[]
 
-    lexInlineElements(source: StringStream): InlineElement[]
+    parseInlineElements(source: StringStream): InlineElement[]
 }
 
 interface Rule {
@@ -120,7 +120,7 @@ class ParagraphRule implements Rule {
         }
 
         forward(s, capturing);
-        return new Paragraph(ctx.lexInlineElements(new StringStream(capturing[0])));
+        return new Paragraph(ctx.parseInlineElements(new StringStream(capturing[0])));
     };
 }
 
@@ -165,7 +165,7 @@ class ListBlockRule implements Rule {
                 forward(s, capturing);
                 blockContent += capturing[0];
             } while (l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
-            let element = new ListElement(marker, ctx.lexBlockElements(
+            let element = new ListElement(marker, ctx.parseBlockElements(
                 new StringStream(blockContent.replace(ListBlockRule.replaceRegex, '')),
             ));
             if (!nextMarker) {
@@ -202,7 +202,7 @@ class QuotesRule implements Rule {
         }
 
         forward(s, capturing);
-        return new Quotes(ctx.lexBlockElements(
+        return new Quotes(ctx.parseBlockElements(
             new StringStream(capturing[0].replace(/^ *> ?/gm, ''))
         ));
     };
@@ -260,7 +260,7 @@ class HeaderBlockRule implements Rule {
             return undefined;
         }
         forward(s, capturing);
-        return new HeaderBlock(ctx.lexInlineElements(new StringStream(capturing[2])), capturing[1].length);
+        return new HeaderBlock(ctx.parseInlineElements(new StringStream(capturing[2])), capturing[1].length);
     }
 
     matchSetext(s: StringStream, ctx: RuleContext): MaybeToken {
@@ -269,7 +269,7 @@ class HeaderBlockRule implements Rule {
             return undefined;
         }
         forward(s, capturing);
-        return new HeaderBlock(ctx.lexInlineElements(new StringStream(capturing[1])), 1);
+        return new HeaderBlock(ctx.parseInlineElements(new StringStream(capturing[1])), 1);
     }
 }
 

@@ -73,7 +73,7 @@ class ParagraphRule {
             return undefined;
         }
         forward(s, capturing);
-        return new token_1.Paragraph(ctx.lexInlineElements(new source_1.StringStream(capturing[0])));
+        return new token_1.Paragraph(ctx.parseInlineElements(new source_1.StringStream(capturing[0])));
     }
     ;
 }
@@ -115,7 +115,7 @@ class ListBlockRule {
                 forward(s, capturing);
                 blockContent += capturing[0];
             } while (l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
-            let element = new token_1.ListElement(marker, ctx.lexBlockElements(new source_1.StringStream(blockContent.replace(ListBlockRule.replaceRegex, ''))));
+            let element = new token_1.ListElement(marker, ctx.parseBlockElements(new source_1.StringStream(blockContent.replace(ListBlockRule.replaceRegex, ''))));
             if (!nextMarker) {
                 let capturing = ListBlockRule.blankRegex.exec(s.source);
                 if (capturing !== null) {
@@ -137,7 +137,7 @@ class ListBlockRule {
 }
 
 exports.ListBlockRule = ListBlockRule;
-ListBlockRule.blankRegex = /^[\t\v\v\f ]*\n/;
+ListBlockRule.blankRegex = /^[\t\v\f ]*\n/;
 ListBlockRule.listBlockRegex = /^((?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
 ListBlockRule.replaceRegex = /^(?: {4}|\t)/gm;
 
@@ -154,7 +154,7 @@ class QuotesRule {
             return undefined;
         }
         forward(s, capturing);
-        return new token_1.Quotes(ctx.lexBlockElements(new source_1.StringStream(capturing[0].replace(/^ *> ?/gm, ''))));
+        return new token_1.Quotes(ctx.parseBlockElements(new source_1.StringStream(capturing[0].replace(/^ *> ?/gm, ''))));
     }
     ;
 }

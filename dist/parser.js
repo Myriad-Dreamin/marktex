@@ -8,7 +8,7 @@ class Parser {
     // noinspection JSUnusedGlobalSymbols
     parse(s) {
         while (!s.eof) {
-            let b = this.lexer.lexBlockElement(s);
+            let b = this.lexer.parseBlockElement(s);
             while (b !== undefined) {
                 b = this.parseHandlers[b.token_type](b);
             }

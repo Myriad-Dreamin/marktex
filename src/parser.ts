@@ -1,27 +1,65 @@
-import {Lexer} from "./lexer";
-import {StringStream} from "./source";
-import {MaybeToken, Token} from "./token";
+import {StringStream} from './source';
+import {BlockElement, InlineElement, InlinePlain, MaybeToken, TokenType} from "./token";
+import {Rule} from "./rules";
+import {RuleOptions} from "./options";
 
 class Parser {
-    protected lexer: Lexer;
-    protected parseHandlers: { [p: number]: (b: Token) => MaybeToken };
+    protected blockRules: Rule[];
+    protected inlineRules: Rule[];
+    public readonly options: RuleOptions;
 
-    public constructor(parseHandlers: { [blockType: number]: (b: Token) => MaybeToken }, lexer: Lexer) {
-        this.lexer = lexer;
-        this.parseHandlers = parseHandlers;
+    public constructor(
+        {inlineRules, blockRules}: { inlineRules: Rule[], blockRules: Rule[] },
+        options: RuleOptions) {
+        this.inlineRules = inlineRules;
+        this.blockRules = blockRules;
+        this.options = options;
+    }
+
+    parseBlockElement(source: StringStream): BlockElement {
+        return this._parse(source, this.blockRules)
+    }
+
+    parseInlineElement(source: StringStream): InlineElement {
+        return this._parse(source, this.inlineRules)
     }
 
     // noinspection JSUnusedGlobalSymbols
-    public parse(s: StringStream) {
+    parseInlineElements(s: StringStream): InlineElement[] {
+        let r: InlineElement[] = [];
+        let e: MaybeToken = undefined, t: MaybeToken = undefined;
         while (!s.eof) {
-            let b: MaybeToken = this.lexer.lexBlockElement(s);
-            while (b !== undefined) {
-                b = this.parseHandlers[b.token_type](b);
+            t = this.parseInlineElement(s);
+            if (e && e.token_type == TokenType.InlinePlain && t.token_type == TokenType.InlinePlain) {
+                (<InlinePlain>e).content += (<InlinePlain>t).content;
+            } else {
+                r.push(t);
+                e = t;
             }
         }
+        return r;
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    parseBlockElements(s: StringStream): BlockElement[] {
+        let r: BlockElement[] = [];
+        while (!s.eof) {
+            r.push(this.parseBlockElement(s));
+        }
+        return r;
+    }
+
+    _parse(source: StringStream, rules: Rule[]) {
+        for (let rule of rules) {
+            let block: MaybeToken = rule.match(source, this);
+            if (block !== undefined) {
+                return block
+            }
+        }
+
+        throw new Error("no rule match the stream at pos " + source.pos);
     }
 }
 
 
-export {Parser}
-
+export {Parser};

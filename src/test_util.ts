@@ -1,6 +1,6 @@
 import {blockRules, inlineRules, Rule, RuleContext, validTags} from "./rules";
 import {StringStream} from "./source";
-import {Lexer} from "./lexer";
+import {Parser} from "./parser";
 
 import * as chai from 'chai';
 import Benchmark = require("benchmark");
@@ -9,8 +9,8 @@ export const expect = chai.expect;
 export type elementMatcher = ({text, matchedLength: number, expectedElement}: { text: string, matchedLength: number, expectedElement: any }) => void;
 export type textAcceptor = ({text}: { text: string }) => void;
 
-export function createContext(): RuleContext {
-    return new Lexer({inlineRules, blockRules}, {validTags});
+export function createContext(): Parser {
+    return new Parser({inlineRules, blockRules}, {validTags});
 }
 
 export function itWillMatchElement(rule: Rule, ctx: RuleContext = createContext()): elementMatcher {

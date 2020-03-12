@@ -4,18 +4,18 @@ import {cn_book_md, math_md} from "./data.test";
 
 
 describe(
-    'lexer', () => {
+    'parser', () => {
         let ctx = createContext();
         it('process math.md', () => {
-            console.log(ctx.lexBlockElements(new StringStream(math_md)));
+            console.log(ctx.parseBlockElements(new StringStream(math_md)));
         });
         it('process data.md', () => {
-            console.log(JSON.stringify(ctx.lexBlockElements(new StringStream(cn_book_md)), undefined, 2));
+            console.log(JSON.stringify(ctx.parseBlockElements(new StringStream(cn_book_md)), undefined, 2));
         });
 
         it('process hr/list-break', () => {
 
-            console.log(JSON.stringify(ctx.lexBlockElements(new StringStream('* hello\n' +
+            console.log(JSON.stringify(ctx.parseBlockElements(new StringStream('* hello\n' +
                 'world\n' +
                 '* how\n' +
                 'are\n' +
