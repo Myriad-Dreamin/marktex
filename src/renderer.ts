@@ -40,14 +40,18 @@ export interface RenderOptions {
 export class Renderer {
     protected parser: Parser;
     private stack: RenderMiddleware[];
+    protected highlight: HighlightFunc;
 
     public constructor(parser: Parser, opts?: RenderOptions) {
         this.parser = parser;
         this.stack = opts?.originStack || [this.createLinkMap, this.handleElements];
+        this.highlight = function (code: string, _: string): string {
+            return code;
+        };
         if (opts) {
             if (opts.highlight) {
-                let highlight = opts.highlight;
-                this.addHighlightOption(highlight);
+                this.highlight = opts.highlight;
+                this.applyHighlightOption();
             }
         }
     }
@@ -185,13 +189,21 @@ export class Renderer {
             +'</pre></code>';
     }
 
-    protected addHighlightOption(highlight: HighlightFunc) {
-        this.renderCodeBlock = function (ctx: RenderContext, el: BlockElement) {
-            let codeBlock: CodeBlock = <CodeBlock>(el);
-            ctx.html += '<pre><code>' + (
-                codeBlock.language ?
-                    highlight(codeBlock.body, codeBlock.language) : codeBlock.body
-            ) + '</pre></code>';
+    private highlightOptionApplied?: boolean;
+
+    protected applyHighlightOption() {
+        if (!this.highlightOptionApplied) {
+            this.highlightOptionApplied = true;
+            let renderFunc = this.renderCodeBlock;
+            this.renderCodeBlock = function (ctx: RenderContext, el: BlockElement) {
+                let codeBlock: CodeBlock = <CodeBlock>(el);
+
+                if (codeBlock.language) {
+                    this.highlight(codeBlock.body, codeBlock.language);
+                }
+
+                renderFunc(ctx, el);
+            }
         }
     }
 
