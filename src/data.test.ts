@@ -1,4 +1,16 @@
 export const math_md: string = '## 误差分析\n\n误差来源\n\n+ 模型误差\n+ 观测误差\n+ 截断误差\n+ 舍入误差\n\n《数值分析》\n\n理论\n\n+ 绝对误差\n  $\\delta(a) = x - a, |\\delta (a)| \\leqslant \\Delta (a)$';
+
+export const code_md: string = '`a` is ``b``\n' +
+    '\n' +
+    '    dd\n' +
+    '      ee\n' +
+    '\n' +
+    '```\n' +
+    'c\n' +
+    '\n' +
+    '  qwq\n' +
+    '```';
+
 export const cn_book_md: string = '## [The Cathedral and the Bazaar](http://www.catb.org/~esr/writings/cathedral-bazaar/cathedral-bazaar/index.html#catbmain)\n' +
     '\n' +
     '作者: Eric Steven Raymond\n' +

@@ -196,8 +196,7 @@ export class Renderer {
 
         ctx.html += '<pre><code' +
             (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
-            (<CodeBlock>(el)).body +
-            +'</pre></code>';
+            (<CodeBlock>(el)).body + '</pre></code>';
     }
 
     protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {

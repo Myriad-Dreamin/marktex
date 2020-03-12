@@ -268,10 +268,10 @@ class CodeBlockRule implements Rule {
     readonly name: string = "CodeBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^((?: {4}|\t)[^\n]+(\n|$))+/;
+    public static readonly regex: RegExp = /^((?: {4}|\t)[^\n]+(\n|$))+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
+        let capturing = CodeBlockRule.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
@@ -467,6 +467,28 @@ class InlineCodeRule implements Rule {
     };
 }
 
+
+class GFMFencedCodeBlockRule implements Rule {
+    readonly name: string = "GFMCodeBlock";
+    readonly description: string = "GFM Markdown Block Rule";
+
+    public static readonly backtickRegex: RegExp = /^(`{3,})([^`]*?)(?:\n|$)([^`]+)(?:\1|$)/;
+    public static readonly tildeRegex: RegExp = /^(~{3,})([^~]*?)(?:\n|$)([^~]+)(?:\1|$)/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = GFMFencedCodeBlockRule.backtickRegex.exec(s.source);
+        if (capturing === null) {
+            capturing = GFMFencedCodeBlockRule.tildeRegex.exec(s.source);
+            if (capturing === null) {
+                return undefined;
+            }
+        }
+
+        forward(s, capturing);
+        return new CodeBlock(capturing[3], capturing[2]);
+    };
+}
+
 const inlineRules: Rule[] = [
     new InlinePlainExceptSpecialMarksRule(),
     new LinkOrImageRule(),
@@ -488,7 +510,7 @@ const blockRules: Rule[] = [
 ];
 
 // noinspection JSUnusedGlobalSymbols
-export function newBlockRules(enableHtml: boolean): Rule[] {
+export function newBlockRules(enableHtml?: boolean): Rule[] {
     let rules0: Rule[] = [
         new NewLineRule(),
         new CodeBlockRule(),
