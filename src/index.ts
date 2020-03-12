@@ -1,6 +1,6 @@
 import {Parser} from "./parser";
 import {blockRules, inlineRules, Rule, validTags} from "./rules";
-import {Render} from "./render";
+import {Renderer} from "./renderer";
 import {RuleOptions} from "./options";
 
 
@@ -36,9 +36,9 @@ const myriad = {
             blockRules: opts.blockRules,
         }, opts.ruleOptions);
     },
-    Render(options: Options): Render {
+    Renderer(options: Options): Renderer {
         let opts = _parseOptions(options);
-        return new Render(myriad.Parser(opts), {});
+        return new Renderer(myriad.Parser(opts), {});
     },
 };
 

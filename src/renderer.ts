@@ -19,7 +19,7 @@ import {
 } from "./token";
 
 interface RenderContext {
-    readonly render: Render,
+    readonly render: Renderer,
     readonly next: () => void,
     readonly tokens: Token[],
 
@@ -33,7 +33,7 @@ interface RenderOptions {
     originStack?: RenderMiddleware[],
 }
 
-class Render {
+class Renderer {
     protected parser: Parser;
     private stack: RenderMiddleware[];
 
@@ -233,5 +233,5 @@ class Render {
 }
 
 
-export {Render}
+export {Renderer}
 
