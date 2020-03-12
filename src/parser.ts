@@ -1,7 +1,6 @@
 import {StringStream} from './source';
 import {BlockElement, InlineElement, InlinePlain, MaybeToken, TokenType} from "./token";
-import {Rule} from "./rules";
-import {RuleOptions} from "./options";
+import {Rule, RuleOptions, validTags} from "./rules";
 
 class Parser {
     protected blockRules: Rule[];
@@ -10,10 +9,10 @@ class Parser {
 
     public constructor(
         {inlineRules, blockRules}: { inlineRules: Rule[], blockRules: Rule[] },
-        options: RuleOptions) {
+        options?: RuleOptions) {
         this.inlineRules = inlineRules;
         this.blockRules = blockRules;
-        this.options = options;
+        this.options = options || {validTags};
     }
 
     parseBlockElement(source: StringStream): BlockElement {

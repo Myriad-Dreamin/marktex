@@ -1,21 +1,20 @@
 import {Parser} from "./parser";
-import {blockRules, inlineRules, Rule, validTags} from "./rules";
+import {blockRules, inlineRules, Rule, RuleOptions} from "./rules";
 import {Renderer, RenderOptions} from "./renderer";
-import {RuleOptions} from "./options";
 
 
 interface Options {
-    inlineRules?: Rule[]
-    blockRules?: Rule[]
-    ruleOptions?: any,
-    renderOptions?: any,
+    inlineRules?: Rule[];
+    blockRules?: Rule[];
+    ruleOptions?: any;
+    renderOptions?: any;
 }
 
 interface parsedOptions {
-    inlineRules: Rule[]
-    blockRules: Rule[]
-    ruleOptions: RuleOptions
-    renderOptions?: RenderOptions,
+    inlineRules: Rule[];
+    blockRules: Rule[];
+    ruleOptions?: RuleOptions;
+    renderOptions?: RenderOptions;
 }
 
 
@@ -25,9 +24,6 @@ function _parseOptions(options?: Options): parsedOptions {
     options.inlineRules = options.inlineRules || inlineRules;
     options.blockRules = options.blockRules || blockRules;
 
-    options.ruleOptions = Object.assign({
-        validTags: validTags
-    }, options.ruleOptions);
     return <parsedOptions>options;
 }
 
