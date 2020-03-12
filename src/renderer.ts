@@ -18,7 +18,9 @@ import {
     TokenType
 } from "./token";
 
-interface RenderContext {
+export type HighlightFunc = (code: string, language: string) => string;
+
+export interface RenderContext {
     readonly render: Renderer,
     readonly next: () => void,
     readonly tokens: Token[],
@@ -27,19 +29,27 @@ interface RenderContext {
     html: string,
 }
 
-type RenderMiddleware = (ctx: RenderContext) => void;
+export type RenderMiddleware = (ctx: RenderContext) => void;
 
-interface RenderOptions {
+
+export interface RenderOptions {
     originStack?: RenderMiddleware[],
+    highlight?: HighlightFunc,
 }
 
-class Renderer {
+export class Renderer {
     protected parser: Parser;
     private stack: RenderMiddleware[];
 
-    public constructor(parser: Parser, renderOptions: RenderOptions) {
+    public constructor(parser: Parser, opts?: RenderOptions) {
         this.parser = parser;
-        this.stack = renderOptions.originStack || [this.createLinkMap, this.handleElements];
+        this.stack = opts?.originStack || [this.createLinkMap, this.handleElements];
+        if (opts) {
+            if (opts.highlight) {
+                let highlight = opts.highlight;
+                this.addHighlightOption(highlight);
+            }
+        }
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -175,6 +185,16 @@ class Renderer {
             +'</pre></code>';
     }
 
+    protected addHighlightOption(highlight: HighlightFunc) {
+        this.renderCodeBlock = function (ctx: RenderContext, el: BlockElement) {
+            let codeBlock: CodeBlock = <CodeBlock>(el);
+            ctx.html += '<pre><code>' + (
+                codeBlock.language ?
+                    highlight(codeBlock.body, codeBlock.language) : codeBlock.body
+            ) + '</pre></code>';
+        }
+    }
+
     protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {
         ctx.html += (<HTMLBlock>(el)).body;
     }
@@ -231,7 +251,4 @@ class Renderer {
         ctx.html += '<code>' + (<InlineCode>el).content + '</code>';
     }
 }
-
-
-export {Renderer}
 

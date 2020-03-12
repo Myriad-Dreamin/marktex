@@ -353,9 +353,11 @@ brackets.
 class CodeBlock implements BlockElement {
     readonly token_type = TokenType.CodeBlock;
     public body: string;
+    public language?: string;
 
-    constructor(body: string) {
+    constructor(body: string, language?: string) {
         this.body = body;
+        this.language = language;
     }
 }
 
