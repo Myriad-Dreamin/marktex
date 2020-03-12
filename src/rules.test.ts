@@ -307,10 +307,14 @@ describe("HorizontalRule", () => {
         matchedLength: "-    -\t-\n".length,
         expectedElement: new Horizontal(),
     });
+    //todo: https://github.github.com/gfm/#example-17
     notMatch({text: " ---"});
     notMatch({text: "-*-"});
     notMatch({text: "-**"});
     notMatch({text: "-***"});
+    notMatch({text: "-- - - -- - a"});
+    notMatch({text: "a------"});
+    notMatch({text: "---a---"});
 });
 
 describe("LinkDefinitionRule", () => {

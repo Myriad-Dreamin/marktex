@@ -246,7 +246,7 @@ class HorizontalRule implements Rule {
     readonly name: string = "Horizontal";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})\n?/;
+    public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})(?:\n|$)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
