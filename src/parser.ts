@@ -17,6 +17,7 @@ export class Parser {
         this.blockRules = options?.blockRules || blockRules;
     }
 
+
     parseBlockElement(source: StringStream): BlockElement {
         return this._parse(source, this.blockRules)
     }

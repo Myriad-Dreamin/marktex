@@ -120,21 +120,26 @@ export class Renderer {
             case TokenType.CodeBlock:
                 this.renderCodeBlock(ctx, el);
                 break;
+                // can latex
             case TokenType.HTMLBlock:
                 this.renderHTMLBlock(ctx, el);
                 break;
             case TokenType.HeaderBlock:
                 this.renderHeaderBlock(ctx, el);
                 break;
+            // can latex
             case TokenType.InlinePlain:
                 this.renderInlinePlain(ctx, el);
                 break;
+            // can latex
             case TokenType.Link:
                 this.renderLink(ctx, el);
                 break;
+            // can latex
             case TokenType.ImageLink:
                 this.renderImageLink(ctx, el);
                 break;
+            // can latex
             case TokenType.Emphasis:
                 this.renderEmphasis(ctx, el);
                 break;
