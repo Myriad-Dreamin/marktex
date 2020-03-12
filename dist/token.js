@@ -25,16 +25,13 @@ const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlo
     StdBlockTokenCount = StdBlockTokenR - StdBlockTokenL, StdInlineTokenCount = StdInlineTokenR - StdInlineTokenL;
 exports.StdBlockTokenCount = StdBlockTokenCount;
 exports.StdInlineTokenCount = StdInlineTokenCount;
-
 class NewLine {
     constructor(content) {
         this.token_type = TokenType.NewLine;
         this.content = content;
     }
 }
-
 exports.NewLine = NewLine;
-
 /*
 (.*\n{1...1})+
 
@@ -210,7 +207,6 @@ class ListBlock {
         this.listElements = listElements;
         this.ordered = ordered;
     }
-
     lookAhead(s) {
         if (this.ordered) {
             return ListBlock.lookAheadOrderedListNumber(s);
@@ -218,21 +214,29 @@ class ListBlock {
             return ListBlock.lookAheadUnorderedListMarker(s);
         }
     }
-
     lookAhead0(s) {
         if (this.ordered) {
             return '0' <= s.source[0] && s.source[0] <= '9';
-        } else {
-            return '*+-'.includes(s.source[0]);
+        } else if ('*+-'.includes(s.source[0])) {
+            let j = 0;
+            for (let i = 0; s.source[i] && s.source[i] != '\n'; i++) {
+                if (s.source[i] == s.source[0]) {
+                    j++;
+                } else if (!'\t\r\v\f '.includes(s.source[i])) {
+                    j = 0;
+                    break;
+                }
+            }
+            return j < 3;
         }
+        return false;
     }
-
     static lookAheadOrderedListNumber(s) {
         for (let i = 0; ; i++) {
             if ('0' <= s.source[i] && s.source[i] <= '9') {
                 continue;
             }
-            if (s.source[i] === '.' && s.source[i + 1] === ' ') {
+            if (s.source[i] == '.' && s.source[i + 1] == ' ') {
                 let m = s.source.substr(0, i);
                 s.forward(i + 2);
                 return m;
@@ -240,9 +244,8 @@ class ListBlock {
             return undefined;
         }
     }
-
     static lookAheadUnorderedListMarker(s) {
-        if ('*+-'.includes(s.source[0]) && s.source[1] === ' ') {
+        if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
             let m = s.source[0];
             s.forward(2);
             return m;
@@ -357,9 +360,9 @@ open the header. (The number of opening hashes determines the header level.) :
 ### This is an H3 ######
 */
 class HeaderBlock {
-    constructor(content, level) {
+    constructor(inlineElements, level) {
         this.token_type = TokenType.HeaderBlock;
-        this.content = content;
+        this.inlineElements = inlineElements;
         this.level = level;
     }
 }

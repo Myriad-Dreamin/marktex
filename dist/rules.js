@@ -41,14 +41,12 @@ const validTags = function () {
     };
 }();
 exports.validTags = validTags;
-
 class NewLineRule {
     constructor() {
         this.name = "NewLine";
         this.description = "Standard Markdown Block Rule";
         this.regex = /^\n+/;
     }
-
     match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -59,14 +57,12 @@ class NewLineRule {
     }
     ;
 }
-
 class ParagraphRule {
     constructor() {
         this.name = "Paragraph";
         this.description = "Standard Markdown Block Rule";
-        this.regex = /^(?:.\n?)+\n*/;
+        this.regex = /^(?:.(?:\n|$)?)+/;
     }
-
     match(s, ctx) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -85,7 +81,6 @@ class ListBlockRule {
         this.name = "ListBlock";
         this.description = "Standard Markdown Block Rule";
     }
-
     match(s, ctx) {
         let ordered;
         if ("*+-".includes(s.source[0])) {
@@ -98,7 +93,6 @@ class ListBlockRule {
         return ListBlockRule.matchBlock(new token_1.ListBlock(ordered), s, ctx);
     }
     ;
-
     static matchBlock(l, s, ctx) {
         let nextMarker;
         nextMarker = l.lookAhead(s);
@@ -135,19 +129,16 @@ class ListBlockRule {
         return l;
     }
 }
-
 exports.ListBlockRule = ListBlockRule;
 ListBlockRule.blankRegex = /^[\t\v\f ]*\n/;
-ListBlockRule.listBlockRegex = /^((?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
+ListBlockRule.listBlockRegex = /^([^\n]*(?:\n|$)(?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
 ListBlockRule.replaceRegex = /^(?: {4}|\t)/gm;
-
 class QuotesRule {
     constructor() {
         this.name = "Quotes";
         this.description = "Standard Markdown Block Rule";
         this.regex = /^( *>[^\n]*(?:\n[^\n]+)*\n?)+/;
     }
-
     match(s, ctx) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -158,7 +149,6 @@ class QuotesRule {
     }
     ;
 }
-
 exports.QuotesRule = QuotesRule;
 class HorizontalRule {
     constructor() {
@@ -198,28 +188,31 @@ class HeaderBlockRule {
     constructor() {
         this.name = "HeaderBlock";
         this.description = "Standard Markdown Block Rule";
-        this.atxRegex = /^(#{1,6}) ([^#]*)#*(?:\n|$)/;
+        this.atxRegex = /^(#{1,6}) ([^\n]*?)#*(?:\n|$)/;
         this.setextRegex = /^([^\n]+)\n=+(?:\n|$)/;
     }
+
     match(s, ctx) {
         return this.matchATX(s, ctx) || this.matchSetext(s, ctx);
     }
     ;
-    matchATX(s, _) {
+
+    matchATX(s, ctx) {
         let capturing = this.atxRegex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
-        return new token_1.HeaderBlock(capturing[2], capturing[1].length);
+        return new token_1.HeaderBlock(ctx.parseInlineElements(new source_1.StringStream(capturing[2])), capturing[1].length);
     }
-    matchSetext(s, _) {
+
+    matchSetext(s, ctx) {
         let capturing = this.setextRegex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
         forward(s, capturing);
-        return new token_1.HeaderBlock(capturing[1], 1);
+        return new token_1.HeaderBlock(ctx.parseInlineElements(new source_1.StringStream(capturing[1])), 1);
     }
 }
 exports.HeaderBlockRule = HeaderBlockRule;
@@ -260,7 +253,6 @@ class HTMLBlockRule {
     }
     ;
 }
-
 exports.HTMLBlockRule = HTMLBlockRule;
 class InlinePlainExceptSpecialMarksRule {
     constructor() {
