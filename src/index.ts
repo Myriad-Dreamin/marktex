@@ -38,7 +38,7 @@ const myriad = {
     },
     Render(options: Options): Render {
         let opts = _parseOptions(options);
-        return new Render(myriad.Parser(opts));
+        return new Render(myriad.Parser(opts), {});
     },
 };
 
