@@ -6,16 +6,18 @@ import * as chai from 'chai';
 import Benchmark = require("benchmark");
 
 export const expect = chai.expect;
-export type elementMatcher = ({text, matchedLength: number, expectedElement}: { text: string, matchedLength: number, expectedElement: any }) => void;
-export type textAcceptor = ({text}: { text: string }) => void;
+export type elementMatcher = ({title, text, matchedLength: number, expectedElement}:
+                                  { title?: string, text: string, matchedLength: number, expectedElement: any }) => void;
+export type textAcceptor = ({text, title}: { text: string, title?: string }) => void;
 
 export function createContext(): Parser {
-    return new Parser({inlineRules, blockRules}, {validTags});
+    return new Parser();
 }
 
 export function itWillMatchElement(rule: Rule, ctx: RuleContext = createContext()): elementMatcher {
-    return ({text, matchedLength, expectedElement}: { text: string, matchedLength: number, expectedElement: any }) => {
-        it('will match ' + text, () => {
+    return ({title, text, matchedLength, expectedElement}:
+                { title?: string, text: string, matchedLength: number, expectedElement: any }) => {
+        it(title ? title : ('will match ' + text), () => {
             let stream = new StringStream(text);
             expect(rule.match(stream, ctx)).to.deep.equal(expectedElement);
             expect(stream.pos).to.equal(matchedLength);
@@ -24,16 +26,16 @@ export function itWillMatchElement(rule: Rule, ctx: RuleContext = createContext(
 }
 
 export function itWillNotMatchElement(rule: Rule, ctx: RuleContext = createContext()): textAcceptor {
-    return ({text}: { text: string }) => {
-        it('will not match ' + text, () => {
-            expect(rule.match(new StringStream(text), ctx)).to.undefined;
+    return ({title, text}: { title?: string, text: string }) => {
+        it(title ? title : ('will not match ' + text), () => {
+            expect(rule.match(new StringStream(text), ctx)).to.be.equal(undefined);
         })
     }
 }
 
 export function benchText(suite: Benchmark.Suite, rule: Rule, ctx: RuleContext = createContext()): textAcceptor {
-    return ({text}: { text: string }) => {
-        suite.add("test match " + text, () => {
+    return ({title, text}: { title?: string, text: string }) => {
+        suite.add(title ? title : ('test match ' + text), () => {
             rule.match(new StringStream(text), ctx);
         });
     }

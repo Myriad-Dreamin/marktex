@@ -56,12 +56,8 @@ export interface HTMLTagsRegexps {
     others: RegExp[];
 }
 
-export interface RuleOptions {
-    validTags: HTMLTagsRegexps;
-}
 
 interface RuleContext {
-    options: RuleOptions
 
     parseBlockElement(source: StringStream): BlockElement
 
@@ -329,12 +325,18 @@ class LinkDefinitionRule implements Rule {
 class HTMLBlockRule implements Rule {
     readonly name: string = "HTMLBlock";
     readonly description: string = "Standard Markdown Block Rule";
+    private validTags: HTMLTagsRegexps;
+
+    constructor(validTags: HTMLTagsRegexps) {
+        this.validTags = validTags;
+    }
+
 
     // public readonly singleTonRegex: RegExp = /^/;
     // public readonly stdRegex: RegExp = /^/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let ot: OpenTagRegExp = ctx.options.validTags.open_tag;
+        let ot: OpenTagRegExp = this.validTags.open_tag;
         let capturing = ot.exec(s.source);
         if (capturing === null) {
             return undefined;
@@ -472,8 +474,8 @@ class GFMFencedCodeBlockRule implements Rule {
     readonly name: string = "GFMCodeBlock";
     readonly description: string = "GFM Markdown Block Rule";
 
-    public static readonly backtickRegex: RegExp = /^(`{3,})([^`]*?)(?:\n|$)([^`]+)(?:\1|$)/;
-    public static readonly tildeRegex: RegExp = /^(~{3,})([^~]*?)(?:\n|$)([^~]+)(?:\1|$)/;
+    public static readonly backtickRegex: RegExp = /^(`{3,}) *([^`\s]+)?[^`\n]*(?:\n|$)([\s\S]*?)(?:\1`*|$)/;
+    public static readonly tildeRegex: RegExp = /^(~{3,}) *([^~\s]+)?.*(?:\n|$)([\s\S]*?)(?:\1~*|$)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = GFMFencedCodeBlockRule.backtickRegex.exec(s.source);
@@ -497,20 +499,17 @@ const inlineRules: Rule[] = [
     new InlinePlainRule(),
 ];
 
-const blockRules: Rule[] = [
-    new NewLineRule(),
-    new CodeBlockRule(),
-    new LinkDefinitionRule(),
-    // new HTMLBlockRule(),
-    new QuotesRule(),
-    new HeaderBlockRule(),
-    new HorizontalRule(),
-    new ListBlockRule(),
-    new ParagraphRule(),
-];
+const blockRules: Rule[] = newBlockRules();
+
+interface BlockRuleOptions {
+    enableHtml?: boolean;
+    enableGFMRules?: boolean;
+    validTags?: HTMLTagsRegexps;
+}
 
 // noinspection JSUnusedGlobalSymbols
-export function newBlockRules(enableHtml?: boolean): Rule[] {
+export function newBlockRules(
+    opts?: BlockRuleOptions): Rule[] {
     let rules0: Rule[] = [
         new NewLineRule(),
         new CodeBlockRule(),
@@ -528,8 +527,13 @@ export function newBlockRules(enableHtml?: boolean): Rule[] {
         new ParagraphRule(),
     ];
 
-    if (enableHtml) {
-        rules0.push(new HTMLBlockRule());
+    // default enable
+    if (opts?.enableGFMRules !== false) {
+        rules0.push(new GFMFencedCodeBlockRule());
+    }
+
+    if (opts?.enableHtml) {
+        rules0.push(new HTMLBlockRule(opts?.validTags || validTags));
     }
 
     return [...rules0, ...rules1, ...rules2];
@@ -543,6 +547,7 @@ export {
 };
 export {
     CodeBlockRule,
+    GFMFencedCodeBlockRule,
     ParagraphRule,
     LinkDefinitionRule,
     QuotesRule,
