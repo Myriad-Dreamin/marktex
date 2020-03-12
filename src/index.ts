@@ -1,46 +1,21 @@
-import {Parser} from "./parser";
-import {blockRules, inlineRules, Rule, RuleOptions} from "./rules";
+import {Parser, ParserOptions} from "./parser";
 import {Renderer, RenderOptions} from "./renderer";
 
 
 interface Options {
-    inlineRules?: Rule[];
-    blockRules?: Rule[];
-    ruleOptions?: any;
-    renderOptions?: any;
-}
-
-interface parsedOptions {
-    inlineRules: Rule[];
-    blockRules: Rule[];
-    ruleOptions?: RuleOptions;
+    parserOptions?: ParserOptions;
     renderOptions?: RenderOptions;
-}
-
-
-function _parseOptions(options?: Options): parsedOptions {
-    options = options || {};
-
-    options.inlineRules = options.inlineRules || inlineRules;
-    options.blockRules = options.blockRules || blockRules;
-
-    return <parsedOptions>options;
 }
 
 // noinspection JSUnusedGlobalSymbols
 const myriad = {
     author: "Myriad-Dreamin",
     Parser(options?: Options): Parser {
-        let opts: parsedOptions = _parseOptions(options);
-        return new Parser({
-            inlineRules: opts.inlineRules,
-            blockRules: opts.blockRules,
-        }, opts.ruleOptions);
+        return new Parser(options?.parserOptions);
     },
 
     Renderer(options?: Options): Renderer {
-        let opts: parsedOptions = _parseOptions(options);
-        return new Renderer(myriad.Parser(options), opts.renderOptions);
+        return new Renderer(myriad.Parser(options), options?.renderOptions);
     },
 };
 

@@ -1,4 +1,4 @@
-import {blockRules, inlineRules, Rule, RuleContext, validTags} from "./rules";
+import {Rule, RuleContext} from "./rules";
 import {StringStream} from "./source";
 import {Parser} from "./parser";
 
