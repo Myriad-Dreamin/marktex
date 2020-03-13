@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const source_1 = require("./source");
 var BraceType;
 (function (BraceType) {
@@ -50,9 +50,7 @@ function expectBraceType(vars, tracer) {
     };
     return e;
 }
-
 exports.expectBraceType = expectBraceType;
-
 function expectTheOnlyBrace(vars, tracer) {
     if (vars.length < 1) {
         tracer({
@@ -64,9 +62,7 @@ function expectTheOnlyBrace(vars, tracer) {
     ebt.expect(0, BraceType.Brace);
     return !ebt.failed;
 }
-
 exports.expectTheOnlyBrace = expectTheOnlyBrace;
-
 function releaseVars(vars, n) {
     let res = '';
     for (let i = n; i < vars.length; i++) {
@@ -86,7 +82,6 @@ function releaseVars(vars, n) {
     }
     return res;
 }
-
 let replaceRegex = [
     /(?<!\\)#1/g, /(?<!\\)#2/g, /(?<!\\)#3/g, /(?<!\\)#4/g,
     /(?<!\\)#5/g, /(?<!\\)#6/g, /(?<!\\)#7/g, /(?<!\\)#8/g, /(?<!\\)#9/g,
@@ -231,10 +226,11 @@ function _braceMatch(res, s, l, r, t) {
         for (let j = 0; j < s.source.length; j++) {
             if (s.source[j] == l) {
                 c++;
-            } else if (s.source[j] == r) {
+            }
+            else if (s.source[j] == r) {
                 c--;
                 if (c === 0) {
-                    res.push({braceType: t, text: s.source.slice(1, j)});
+                    res.push({ braceType: t, text: s.source.slice(1, j) });
                     s.forward(j + 1);
                     return;
                 }
@@ -276,7 +272,8 @@ class LaTeXParser {
                 s.forward(capturing.index + capturing[0].length);
                 let vars = braceMatch(s);
                 markdownText += cmd(ctx, vars, this.tex);
-            } else {
+            }
+            else {
                 markdownText += s.source.slice(0, capturing.index + capturing[0].length);
                 s.forward(capturing.index + capturing[0].length);
             }

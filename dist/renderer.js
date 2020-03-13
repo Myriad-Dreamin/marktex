@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const source_1 = require("./source");
 const token_1 = require("./token");
 const tex_parser_1 = require("./tex-parser");
@@ -31,6 +31,22 @@ class Renderer {
             render: this, tokens: this.parser.parseBlockElements(s), linkDefs: {}, html: '', texCtx: {
                 texCommands: this.texCommands,
                 texCommandDefs: mdFieldTexCommands || {},
+            }, next() {
+                for (; stackIndex < ctx.render.stack.length;) {
+                    ctx.render.stack[stackIndex++](ctx);
+                }
+            }
+        };
+        ctx.next();
+        return ctx.html;
+    }
+    // noinspection JSUnusedGlobalSymbols
+    renderString(s) {
+        let stackIndex = 0;
+        let ctx = {
+            render: this, tokens: this.parser.parseBlockElements(new source_1.StringStream(s)), linkDefs: {}, html: '', texCtx: {
+                texCommands: this.texCommands,
+                texCommandDefs: {},
             }, next() {
                 for (; stackIndex < ctx.render.stack.length;) {
                     ctx.render.stack[stackIndex++](ctx);
@@ -201,20 +217,17 @@ class Renderer {
             (link.title ? ' title="' + link.title + '"' : '') +
             "/>";
     }
-
     renderMathBlock(ctx, el) {
         let mathBlock = el;
         ctx.texCtx.underMathEnv = true;
         ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(mathBlock.content)) :
             mathBlock.content) + '</script>';
     }
-
     renderLatexBlock(ctx, el) {
         let latexBlock = el;
         ctx.texCtx.underMathEnv = false;
         ctx.html += this.latexParser.tex(ctx.texCtx, new source_1.StringStream(latexBlock.content));
     }
-
     renderEmphasis(ctx, el) {
         let emphasisEl = el;
         ctx.texCtx.underMathEnv = false;
@@ -222,7 +235,6 @@ class Renderer {
             emphasisEl.content) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
-
     renderInlineCode(ctx, el) {
         ctx.html += '<code>' + el.content + '</code>';
     }

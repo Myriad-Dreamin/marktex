@@ -92,13 +92,30 @@ export class Renderer {
         return ctx.html;
     }
 
+    // noinspection JSUnusedGlobalSymbols
+    public renderString(s: string): string {
+        let stackIndex: number = 0;
+        let ctx: RenderContext = {
+            render: this, tokens: this.parser.parseBlockElements(new StringStream(s)), linkDefs: {}, html: '', texCtx: {
+                texCommands: this.texCommands,
+                texCommandDefs: {},
+            }, next() {
+                for (; stackIndex < ctx.render.stack.length;) {
+                    ctx.render.stack[stackIndex++](ctx);
+                }
+            }
+        };
+        ctx.next();
+        return ctx.html;
+    }
+
     public renderElements(ctx: RenderContext, elements: Token[]) {
         for (let el of elements) {
             ctx.render.handleElement(ctx, el);
         }
     }
 
-    public createLinkMap(ctx: RenderContext) {
+    protected createLinkMap(ctx: RenderContext) {
         for (let el of ctx.tokens) {
             if (el.token_type === TokenType.LinkDefinition) {
                 let linkDef: LinkDefinition = <LinkDefinition>el;
@@ -113,7 +130,7 @@ export class Renderer {
         }
     }
 
-    public handleElement(ctx: RenderContext, el: BlockElement) {
+    protected handleElement(ctx: RenderContext, el: BlockElement) {
         switch (el.token_type) {
             case TokenType.Paragraph:
                 this.renderParagraph(ctx, el);

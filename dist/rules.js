@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const token_1 = require("./token");
 const source_1 = require("./source");
 class RegExpWithTagName extends RegExp {
@@ -105,9 +105,11 @@ class ListBlockRule {
         let ordered;
         if ("*+-".includes(s.source[0])) {
             ordered = false;
-        } else if ('0' <= s.source[0] && s.source[0] <= '9') {
+        }
+        else if ('0' <= s.source[0] && s.source[0] <= '9') {
             ordered = true;
-        } else {
+        }
+        else {
             return undefined;
         }
         return ListBlockRule.matchBlock(new token_1.ListBlock(ordered), s, ctx);
@@ -139,7 +141,8 @@ class ListBlockRule {
                     if (l.lookAhead0(s)) {
                         nextMarker = l.lookAhead(s);
                     }
-                } else {
+                }
+                else {
                     element.blankSeparated = lastSeparated;
                     lastSeparated = false;
                 }
@@ -271,16 +274,15 @@ class HTMLBlockRule {
     }
     ;
 }
-
 exports.HTMLBlockRule = HTMLBlockRule;
-
 function _braceMatch(s, l, r) {
     if (s.source[0] == l) {
         let c = 0;
         for (let j = 0; j < s.source.length; j++) {
             if (s.source[j] == l) {
                 c++;
-            } else if (s.source[j] == r) {
+            }
+            else if (s.source[j] == r) {
                 c--;
                 if (c === 0) {
                     let res = s.source.slice(0, j + 1);
@@ -295,13 +297,11 @@ function _braceMatch(s, l, r) {
     }
     return '';
 }
-
 class InlineLatexCommandRule {
     constructor() {
         this.name = "InlineLatexCommand";
         this.description = "Latex Inline Rule";
     }
-
     match(s, _) {
         let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
         if (capturing === null) {
@@ -310,7 +310,6 @@ class InlineLatexCommandRule {
         forward(s, capturing);
         return new token_1.InlinePlain(capturing[0] + this.braceMatch(s));
     }
-
     braceMatch(s) {
         let res = '';
         for (let i = 0; !s.eof; i = 0) {
@@ -329,16 +328,13 @@ class InlineLatexCommandRule {
         return res;
     }
 }
-
 exports.InlineLatexCommandRule = InlineLatexCommandRule;
 InlineLatexCommandRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
-
 class LatexBlockRule {
     constructor() {
         this.name = "LatexBlock";
         this.description = "Latex Inline Rule";
     }
-
     match(s, _) {
         let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
         if (capturing === null) {
@@ -347,7 +343,6 @@ class LatexBlockRule {
         forward(s, capturing);
         return new token_1.LateXBlock(capturing[0] + this.braceMatch(s));
     }
-
     braceMatch(s) {
         let res = '';
         for (let i = 0; !s.eof; i = 0) {
@@ -373,16 +368,13 @@ class LatexBlockRule {
         return res;
     }
 }
-
 LatexBlockRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
-
 class InlinePlainExceptSpecialMarksRule {
     constructor() {
         this.name = "InlinePlainExceptSpecialMarks";
         this.description = "Standard Markdown Inline Rule";
         this.regex = /^(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+/;
     }
-
     match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -410,16 +402,13 @@ class InlinePlainRule {
     }
     ;
 }
-
 exports.InlinePlainRule = InlinePlainRule;
-
 class InlineMathRule {
     constructor() {
         this.name = "InlineMath";
         this.description = "Markdown Inline Rule";
         this.regex = /^\$((?:[^$]|\\\$)+)\$/;
     }
-
     match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -430,16 +419,13 @@ class InlineMathRule {
     }
     ;
 }
-
 exports.InlineMathRule = InlineMathRule;
-
 class MathBlockRule {
     constructor() {
         this.name = "MathBlock";
         this.description = "Markdown Block Rule";
         this.regex = /^\$\$((?:[^$]|\\\$)+)\$\$/;
     }
-
     match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -450,7 +436,6 @@ class MathBlockRule {
     }
     ;
 }
-
 class LinkOrImageRule {
     constructor() {
         this.name = "Link";
@@ -458,7 +443,6 @@ class LinkOrImageRule {
         this.regex = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
         this.refRegex = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\s*\[([^\]]*)]/;
     }
-
     match(s, ctx) {
         return this.matchInline(s, ctx) || this.matchRef(s, ctx);
     }
@@ -471,7 +455,8 @@ class LinkOrImageRule {
         forward(s, capturing);
         if (capturing[1] !== '') {
             return new token_1.ImageLink(capturing[2], capturing[3], true, capturing[4]);
-        } else {
+        }
+        else {
             return new token_1.Link(capturing[2], capturing[3], true, capturing[4]);
         }
     }
@@ -483,7 +468,8 @@ class LinkOrImageRule {
         forward(s, capturing);
         if (capturing[1] !== '') {
             return new token_1.ImageLink(capturing[2], capturing[3], false);
-        } else {
+        }
+        else {
             return new token_1.Link(capturing[2], capturing[3], false);
         }
     }
@@ -583,9 +569,7 @@ function newBlockRules(opts) {
     }
     return [...rules0, ...rules1, ...rules2];
 }
-
 exports.newBlockRules = newBlockRules;
-
 // noinspection JSUnusedGlobalSymbols
 function newInlineRules(opts) {
     let rules0 = [
@@ -604,5 +588,4 @@ function newInlineRules(opts) {
     }
     return [...rules0, ...rules1];
 }
-
 exports.newInlineRules = newInlineRules;

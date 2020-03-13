@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const source_1 = require("./source");
 const parser_1 = require("./parser");
 const chai = require("chai");
@@ -10,7 +10,7 @@ function createContext() {
 }
 exports.createContext = createContext;
 function itWillMatchElement(rule, ctx = createContext()) {
-    return ({title, text, matchedLength, expectedElement}) => {
+    return ({ title, text, matchedLength, expectedElement }) => {
         it(title ? title : ('will match ' + text), () => {
             let stream = new source_1.StringStream(text);
             exports.expect(rule.match(stream, ctx)).to.deep.equal(expectedElement);
@@ -20,7 +20,7 @@ function itWillMatchElement(rule, ctx = createContext()) {
 }
 exports.itWillMatchElement = itWillMatchElement;
 function itWillNotMatchElement(rule, ctx = createContext()) {
-    return ({title, text}) => {
+    return ({ title, text }) => {
         it(title ? title : ('will not match ' + text), () => {
             exports.expect(rule.match(new source_1.StringStream(text), ctx)).to.be.equal(undefined);
         });
@@ -28,7 +28,7 @@ function itWillNotMatchElement(rule, ctx = createContext()) {
 }
 exports.itWillNotMatchElement = itWillNotMatchElement;
 function benchText(suite, rule, ctx = createContext()) {
-    return ({title, text}) => {
+    return ({ title, text }) => {
         suite.add(title ? title : ('test match ' + text), () => {
             rule.match(new source_1.StringStream(text), ctx);
         });
@@ -40,6 +40,6 @@ function onRun(rule, callback) {
     callback(benchText(suite, rule));
     suite.on('cycle', function (event) {
         console.log(String(event.target));
-    }).run({'async': true});
+    }).run({ 'async': true });
 }
 exports.onRun = onRun;

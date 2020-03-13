@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const token_1 = require("./token");
 const rules_1 = require("./rules");
 class Parser {
@@ -21,7 +21,8 @@ class Parser {
             t = this.parseInlineElement(s);
             if (e && e.token_type == token_1.TokenType.InlinePlain && t.token_type == token_1.TokenType.InlinePlain) {
                 e.content += t.content;
-            } else {
+            }
+            else {
                 r.push(t);
                 e = t;
             }
