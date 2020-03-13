@@ -6,7 +6,7 @@ export enum BraceType {
     // []
     Bracket = 1,
     // ()
-    Parenthesis = 2,
+    // Parenthesis = 2,
 
 }
 
@@ -36,7 +36,8 @@ export class LaTeXInvalidCommandError extends LaTeXError {
 }
 
 
-export type commandFunc = (ctx: TexContext, vars: TexCmdVar[]) => string;
+export type commandFunc = (
+    ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void) => string;
 
 export interface TexContext {
     // predefined commands
@@ -73,6 +74,40 @@ export function expectBraceType(vars: TexCmdVar[], tracer: (args: any) => void) 
     };
 
     return e
+}
+
+export function expectTheOnlyBrace(vars: TexCmdVar[], tracer: (args: any) => void): boolean {
+
+    if (vars.length < 1) {
+        tracer({
+            invalid_length: vars.length,
+        });
+        return false;
+    }
+    let ebt = expectBraceType(vars, tracer);
+    ebt.expect(0, BraceType.Brace);
+    return !ebt.failed;
+}
+
+
+function releaseVars(vars: TexCmdVar[], n: number) {
+    let res = '';
+    for (let i = n; i < vars.length; i++) {
+        switch (vars[i].braceType) {
+            case BraceType.Brace:
+                res += '{' + vars[i].text + '}';
+                break;
+            case BraceType.Bracket:
+                res += '[' + vars[i].text + ']';
+                break;
+            // case BraceType.Parenthesis:
+            //     res += '(' + vars[i].text + ')';
+            //     break
+            default:
+                throw new LaTeXError(`not known brace type: ${vars[i].braceType}`)
+        }
+    }
+    return res;
 }
 
 let replaceRegex: RegExp[] = [
@@ -128,10 +163,10 @@ export const texCommands: { [commandName: string]: commandFunc } = {
             return '';
         }
         let optionVars = vars.slice(1, vars.length - 1), textTemplate = vars[vars.length - 1].text;
-        ctx.texCommandDefs[cmdName] = function (ctx: TexContext, args: TexCmdVar[]): any {
+        ctx.texCommandDefs[cmdName] = function (ctx: TexContext, args: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): any {
             let tracer = traceInvalidCommand(cmdName, ctx);
 
-            if (args.length + optionVars.length < commandVarsCount || args.length > commandVarsCount) {
+            if (args.length + optionVars.length < commandVarsCount) {
                 tracer({
                     invalid_length: vars.length,
                 });
@@ -146,19 +181,82 @@ export const texCommands: { [commandName: string]: commandFunc } = {
             }
 
 
-            let coveredL = commandVarsCount - args.length;
+            let coveredL = Math.max(commandVarsCount - args.length, 0);
+            let coveredR = Math.min(commandVarsCount, args.length);
             let res: string = textTemplate;
             for (let i = 0; i < coveredL; i++) {
                 res = res.replace(replaceRegex[i], optionVars[i].text);
             }
-            for (let i = 0; i < args.length; i++) {
+            for (let i = 0; i < coveredR; i++) {
                 res = res.replace(replaceRegex[i + coveredL], args[i].text);
             }
-            return res;
+            return tex(ctx, new StringStream(res + releaseVars(args, coveredR)));
         };
 
-
         return '';
+    },
+    par(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+        if (ctx.underMathEnv) {
+            return '\\par';
+        }
+
+        return '<br/>' + tex(ctx, new StringStream(releaseVars(vars, 0)));
+    },
+    indent(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+        if (ctx.underMathEnv) {
+            return '\\indent';
+        }
+        return '<br/>' + tex(ctx, new StringStream(releaseVars(vars, 0)));
+    },
+    url(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+        if (ctx.underMathEnv) {
+            return '';
+        }
+        if (!expectTheOnlyBrace(vars, traceInvalidCommand('url', ctx))) {
+            return '';
+        }
+        return '<a href="' + vars[0].text + '">' + vars[0].text + '</a>' +
+            tex(ctx, new StringStream(releaseVars(vars, 1)));
+    },
+    section(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+        if (ctx.underMathEnv) {
+            return '';
+        }
+        if (!expectTheOnlyBrace(vars, traceInvalidCommand('section', ctx))) {
+            return '';
+        }
+        return '<h1>' + tex(ctx, new StringStream(vars[0].text)) + '</h1>' +
+            tex(ctx, new StringStream(releaseVars(vars, 1)));
+    },
+    subsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+        if (ctx.underMathEnv) {
+            return '';
+        }
+        if (!expectTheOnlyBrace(vars, traceInvalidCommand('subsecion', ctx))) {
+            return '';
+        }
+        return '<h3>' + tex(ctx, new StringStream(vars[0].text)) + '</h3>' +
+            tex(ctx, new StringStream(releaseVars(vars, 1)));
+    },
+    subsubsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+        if (ctx.underMathEnv) {
+            return '';
+        }
+        if (!expectTheOnlyBrace(vars, traceInvalidCommand('subsubsection', ctx))) {
+            return '';
+        }
+        return '<h5>' + tex(ctx, new StringStream(vars[0].text)) + '</h5>' +
+            tex(ctx, new StringStream(releaseVars(vars, 1)));
+    },
+    subsubsubsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+        if (ctx.underMathEnv) {
+            return '';
+        }
+        if (!expectTheOnlyBrace(vars, traceInvalidCommand('subsubsubsection', ctx))) {
+            return '';
+        }
+        return '<h6>' + tex(ctx, new StringStream(vars[0].text)) + '</h6>' +
+            tex(ctx, new StringStream(releaseVars(vars, 1)));
     }
 };
 
@@ -188,22 +286,22 @@ function braceMatch(s: StringStream) {
     for (let i = 0; !s.eof; i = 0) {
         for (; !s.eof && ' \n\t\v\f\r'.includes(s.source[i]); i++) {
         }
-        if (!'([{'.includes(s.source[i])) {
+        if (!'[{'.includes(s.source[i])) {
             return res;
         }
         if (i) s.forward(i);
 
-        _braceMatch(res, s, '(', ')', BraceType.Parenthesis);
+        // _braceMatch(res, s, '(', ')', BraceType.Parenthesis);
         _braceMatch(res, s, '[', ']', BraceType.Bracket);
         _braceMatch(res, s, '{', '}', BraceType.Brace);
     }
     return res;
 }
 
-
 export class LaTeXParser {
 
     public static readonly cmdNameRegex = /\\([a-zA-Z_]\w*)/;
+
 
     tex(ctx: TexContext, s: StringStream): string {
         let markdownText: string = '', matched: string;
@@ -220,7 +318,7 @@ export class LaTeXParser {
                 s.forward(capturing.index + capturing[0].length);
                 let vars: TexCmdVar[] = braceMatch(s);
 
-                markdownText += this.tex(ctx, new StringStream(cmd(ctx, vars)));
+                markdownText += cmd(ctx, vars, this.tex);
             } else {
                 markdownText += s.source.slice(0, capturing.index + capturing[0].length);
                 s.forward(capturing.index + capturing[0].length);

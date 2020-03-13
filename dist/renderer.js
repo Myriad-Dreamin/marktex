@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", {value: true});
 const source_1 = require("./source");
 const token_1 = require("./token");
 const tex_parser_1 = require("./tex-parser");
-
 class Renderer {
     constructor(parser, opts) {
         this.parser = parser;
@@ -13,6 +12,7 @@ class Renderer {
         };
         if (opts) {
             this.highlight = opts.highlight;
+            this.enableLaTeX = opts.enableLaTeX;
             if (opts.wrapCodeClassTag) {
                 this.wrapCodeClassTag = opts.wrapCodeClassTag;
             }
@@ -96,9 +96,14 @@ class Renderer {
             case token_1.TokenType.Link:
                 this.renderLink(ctx, el);
                 break;
-            // can latex
             case token_1.TokenType.ImageLink:
                 this.renderImageLink(ctx, el);
+                break;
+            case token_1.TokenType.MathBlock:
+                this.renderMathBlock(ctx, el);
+                break;
+            case token_1.TokenType.LatexBlock:
+                this.renderLatexBlock(ctx, el);
                 break;
             // can latex
             case token_1.TokenType.Emphasis:
@@ -135,19 +140,15 @@ class Renderer {
         }
         ctx.html += '</' + (listBlock.ordered ? 'ol' : 'ul') + '>';
     }
-
     renderHorizontal(ctx, _) {
         ctx.html += "<hr/>";
     }
-
     renderLinkDefinition(_, __) {
         // ignore it
     }
-
     wrapCodeClassTag(language) {
         return 'lang-' + language;
     }
-
     renderCodeBlock(ctx, el) {
         let codeBlock = (el);
         if (codeBlock.language && this.highlight) {
@@ -157,7 +158,6 @@ class Renderer {
             (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
             (el).body + '</pre></code>';
     }
-
     renderHTMLBlock(ctx, el) {
         ctx.html += (el).body;
     }
@@ -169,7 +169,9 @@ class Renderer {
     }
     renderInlinePlain(ctx, el) {
         ctx.texCtx.underMathEnv = false;
-        ctx.html += this.latexParser.tex(ctx.texCtx, new source_1.StringStream((el).content));
+        ctx.html += this.enableLaTeX ?
+            this.latexParser.tex(ctx.texCtx, new source_1.StringStream((el).content)) :
+            (el).content;
     }
     renderLink(ctx, el) {
         let link = el;
@@ -184,7 +186,8 @@ class Renderer {
             ctx.html += ' title="' + link.title + '"';
         }
         ctx.texCtx.underMathEnv = false;
-        ctx.html += '>' + this.latexParser.tex(ctx.texCtx, new source_1.StringStream(link.linkTitle)) + '</a>';
+        ctx.html += '>' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(link.linkTitle)) :
+            link.linkTitle) + '</a>';
     }
     renderImageLink(ctx, el) {
         let link = el;
@@ -198,13 +201,28 @@ class Renderer {
             (link.title ? ' title="' + link.title + '"' : '') +
             "/>";
     }
+
+    renderMathBlock(ctx, el) {
+        let mathBlock = el;
+        ctx.texCtx.underMathEnv = true;
+        ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(mathBlock.content)) :
+            mathBlock.content) + '</script>';
+    }
+
+    renderLatexBlock(ctx, el) {
+        let latexBlock = el;
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += this.latexParser.tex(ctx.texCtx, new source_1.StringStream(latexBlock.content));
+    }
+
     renderEmphasis(ctx, el) {
         let emphasisEl = el;
         ctx.texCtx.underMathEnv = false;
-        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') +
-            this.latexParser.tex(ctx.texCtx, new source_1.StringStream(emphasisEl.content)) +
+        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(emphasisEl.content)) :
+            emphasisEl.content) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
+
     renderInlineCode(ctx, el) {
         ctx.html += '<code>' + el.content + '</code>';
     }

@@ -9,9 +9,11 @@ import {
     ImageLink,
     InlineCode,
     InlinePlain,
+    LateXBlock,
     Link,
     LinkDefinition,
     ListBlock,
+    MathBlock,
     Paragraph,
     Quotes,
     Token,
@@ -149,9 +151,14 @@ export class Renderer {
             case TokenType.Link:
                 this.renderLink(ctx, el);
                 break;
-            // can latex
             case TokenType.ImageLink:
                 this.renderImageLink(ctx, el);
+                break;
+            case TokenType.MathBlock:
+                this.renderMathBlock(ctx, el);
+                break;
+            case TokenType.LatexBlock:
+                this.renderLatexBlock(ctx, el);
                 break;
             // can latex
             case TokenType.Emphasis:
@@ -163,8 +170,6 @@ export class Renderer {
             default:
                 throw new Error(`invalid Token Type: ${el.token_type}`);
         }
-
-
     }
 
     protected renderParagraph(ctx: RenderContext, el: BlockElement) {
@@ -267,7 +272,20 @@ export class Renderer {
         ctx.html += '<img src="' + link.link + '"' + '" alt="' + link.linkTitle + '"' +
             (link.title ? ' title="' + link.title + '"' : '') +
             "/>";
+    }
 
+    protected renderMathBlock(ctx: RenderContext, el: BlockElement) {
+        let mathBlock: MathBlock = <MathBlock>el;
+        ctx.texCtx.underMathEnv = true;
+        ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (
+            this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(mathBlock.content)) :
+                mathBlock.content) + '</script>';
+    }
+
+    protected renderLatexBlock(ctx: RenderContext, el: BlockElement) {
+        let latexBlock: LateXBlock = <LateXBlock>el;
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += this.latexParser.tex(ctx.texCtx, new StringStream(latexBlock.content));
     }
 
     protected renderEmphasis(ctx: RenderContext, el: BlockElement) {

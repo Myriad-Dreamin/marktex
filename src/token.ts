@@ -18,6 +18,7 @@ enum TokenType {
     InlineCode,
 
     MathBlock,
+    LatexBlock,
 }
 
 // noinspection JSUnusedGlobalSymbols
@@ -497,9 +498,28 @@ class InlineCode implements InlineElement {
 }
 
 
-// noinspection JSUnusedGlobalSymbols
+class LateXBlock implements InlineElement {
+    readonly token_type = TokenType.LatexBlock;
+
+    public content: string;
+    public inline?: boolean;
+
+    constructor(content: string) {
+        this.content = content;
+    }
+}
+
+
 class MathBlock implements InlineElement {
     readonly token_type = TokenType.MathBlock;
+
+    public content: string;
+    public inline?: boolean;
+
+    constructor(content: string, inline: boolean) {
+        this.content = content;
+        this.inline = inline;
+    }
 }
 
 
@@ -523,6 +543,7 @@ export {
     HTMLBlock,
     HeaderBlock,
     MathBlock,
+    LateXBlock,
 
     InlinePlain,
     Link,

@@ -17,6 +17,7 @@ var TokenType;
     TokenType[TokenType["Emphasis"] = 12] = "Emphasis";
     TokenType[TokenType["InlineCode"] = 13] = "InlineCode";
     TokenType[TokenType["MathBlock"] = 14] = "MathBlock";
+    TokenType[TokenType["LatexBlock"] = 15] = "LatexBlock";
 })(TokenType || (TokenType = {}));
 exports.TokenType = TokenType;
 // noinspection JSUnusedGlobalSymbols
@@ -219,8 +220,8 @@ class ListBlock {
             return '0' <= s.source[0] && s.source[0] <= '9';
         } else if ('*+-'.includes(s.source[0])) {
             let j = 0;
-            for (let i = 0; s.source[i] && s.source[i] !== '\n'; i++) {
-                if (s.source[i] === s.source[0]) {
+            for (let i = 0; s.source[i] && s.source[i] != '\n'; i++) {
+                if (s.source[i] == s.source[0]) {
                     j++;
                 } else if (!'\t\r\v\f '.includes(s.source[i])) {
                     j = 0;
@@ -236,7 +237,7 @@ class ListBlock {
             if ('0' <= s.source[i] && s.source[i] <= '9') {
                 continue;
             }
-            if (s.source[i] === '.' && s.source[i + 1] === ' ') {
+            if (s.source[i] == '.' && s.source[i + 1] == ' ') {
                 let m = s.source.substr(0, i);
                 s.forward(i + 2);
                 return m;
@@ -245,7 +246,7 @@ class ListBlock {
         }
     }
     static lookAheadUnorderedListMarker(s) {
-        if ('*+-'.includes(s.source[0]) && s.source[1] === ' ') {
+        if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
             let m = s.source[0];
             s.forward(2);
             return m;
@@ -402,18 +403,33 @@ class Emphasis {
         this.level = level;
     }
 }
+
 exports.Emphasis = Emphasis;
+
 class InlineCode {
     constructor(content) {
         this.token_type = TokenType.InlineCode;
         this.content = content;
     }
 }
+
 exports.InlineCode = InlineCode;
-// noinspection JSUnusedGlobalSymbols
-class MathBlock {
-    constructor() {
-        this.token_type = TokenType.MathBlock;
+
+class LateXBlock {
+    constructor(content) {
+        this.token_type = TokenType.LatexBlock;
+        this.content = content;
     }
 }
+
+exports.LateXBlock = LateXBlock;
+
+class MathBlock {
+    constructor(content, inline) {
+        this.token_type = TokenType.MathBlock;
+        this.content = content;
+        this.inline = inline;
+    }
+}
+
 exports.MathBlock = MathBlock;
