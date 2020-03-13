@@ -1,13 +1,29 @@
 import {Renderer} from "./renderer";
-import {createContext} from "./test_util";
 import {StringStream} from "./source";
-import {cn_book_md} from "./data.test";
+import {latex_md, math_md} from "./data.test";
+import {Parser} from "./parser";
+import {newInlineRules} from "./rules";
 
-// console.log(new Render(createContext(), {}).render(
-//     new StringStream(math_md),
+
+// console.log(new Renderer(new Parser({
+// inlineRules: newInlineRules({enableLaTeX: true}),})).render(
+//     new StringStream(code_md),
 // ));
-console.log(new Renderer(createContext(), {}).render(
-    new StringStream(cn_book_md),
-));
+describe('renderer', () => {
+    it('should render math.md', () => {
+        console.log(new Renderer(new Parser({
+            inlineRules: newInlineRules({enableLaTeX: true}),
+        }), {enableLaTeX: true}).render(
+            new StringStream(math_md),
+        ));
+    });
+    it('should render latex.md', () => {
+        console.log(new Renderer(new Parser({
+            inlineRules: newInlineRules({enableLaTeX: true}),
+        }), {enableLaTeX: true}).render(
+            new StringStream(latex_md),
+        ));
+    })
+});
 
 

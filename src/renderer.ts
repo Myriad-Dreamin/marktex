@@ -9,37 +9,65 @@ import {
     ImageLink,
     InlineCode,
     InlinePlain,
+    LateXBlock,
     Link,
     LinkDefinition,
     ListBlock,
+    MathBlock,
     Paragraph,
     Quotes,
     Token,
     TokenType
 } from "./token";
+import {commandFunc, LaTeXParser, texCommands, TexContext} from "./tex-parser";
 
-interface RenderContext {
-    readonly render: Renderer,
-    readonly next: () => void,
-    readonly tokens: Token[],
+export type HighlightFunc = (code: string, language: string) => string;
 
-    linkDefs: { [linkIdentifier: string]: LinkDefinition },
-    html: string,
+export interface RenderContext {
+    readonly render: Renderer;
+    readonly next: () => void;
+    readonly tokens: Token[];
+
+    linkDefs: { [linkIdentifier: string]: LinkDefinition };
+    html: string;
+    texCtx: TexContext;
 }
 
-type RenderMiddleware = (ctx: RenderContext) => void;
+export type RenderMiddleware = (ctx: RenderContext) => void;
 
-interface RenderOptions {
+
+export interface RenderOptions {
     originStack?: RenderMiddleware[],
+    wrapCodeClassTag?: (language: string) => string,
+    highlight?: HighlightFunc,
+    enableLaTeX?: boolean,
 }
 
-class Renderer {
+export class Renderer {
     protected parser: Parser;
     private stack: RenderMiddleware[];
+    private readonly texCommands: { [p: string]: commandFunc };
+    private latexParser: LaTeXParser;
 
-    public constructor(parser: Parser, renderOptions: RenderOptions) {
+    protected highlight?: HighlightFunc;
+    protected enableLaTeX?: boolean;
+
+    public constructor(parser: Parser, opts?: RenderOptions) {
         this.parser = parser;
-        this.stack = renderOptions.originStack || [this.createLinkMap, this.handleElements];
+        this.stack = opts?.originStack || [this.createLinkMap, this.handleElements];
+        this.highlight = function (code: string, _: string): string {
+            return code;
+        };
+        if (opts) {
+            this.highlight = opts.highlight;
+            this.enableLaTeX = opts.enableLaTeX;
+
+            if (opts.wrapCodeClassTag) {
+                this.wrapCodeClassTag = opts.wrapCodeClassTag;
+            }
+        }
+        this.texCommands = texCommands;
+        this.latexParser = new LaTeXParser();
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -48,10 +76,13 @@ class Renderer {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    public render(s: StringStream): string {
+    public render(s: StringStream, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {
         let stackIndex: number = 0;
         let ctx: RenderContext = {
-            render: this, tokens: this.parser.parseBlockElements(s), linkDefs: {}, html: '', next() {
+            render: this, tokens: this.parser.parseBlockElements(s), linkDefs: {}, html: '', texCtx: {
+                texCommands: this.texCommands,
+                texCommandDefs: mdFieldTexCommands || {},
+            }, next() {
                 for (; stackIndex < ctx.render.stack.length;) {
                     ctx.render.stack[stackIndex++](ctx);
                 }
@@ -105,21 +136,31 @@ class Renderer {
             case TokenType.CodeBlock:
                 this.renderCodeBlock(ctx, el);
                 break;
+            // can latex
             case TokenType.HTMLBlock:
                 this.renderHTMLBlock(ctx, el);
                 break;
             case TokenType.HeaderBlock:
                 this.renderHeaderBlock(ctx, el);
                 break;
+            // can latex
             case TokenType.InlinePlain:
                 this.renderInlinePlain(ctx, el);
                 break;
+            // can latex
             case TokenType.Link:
                 this.renderLink(ctx, el);
                 break;
             case TokenType.ImageLink:
                 this.renderImageLink(ctx, el);
                 break;
+            case TokenType.MathBlock:
+                this.renderMathBlock(ctx, el);
+                break;
+            case TokenType.LatexBlock:
+                this.renderLatexBlock(ctx, el);
+                break;
+            // can latex
             case TokenType.Emphasis:
                 this.renderEmphasis(ctx, el);
                 break;
@@ -129,8 +170,6 @@ class Renderer {
             default:
                 throw new Error(`invalid Token Type: ${el.token_type}`);
         }
-
-
     }
 
     protected renderParagraph(ctx: RenderContext, el: BlockElement) {
@@ -169,10 +208,19 @@ class Renderer {
         // ignore it
     }
 
+    public wrapCodeClassTag(language: string): string {
+        return 'lang-' + language;
+    }
+
     protected renderCodeBlock(ctx: RenderContext, el: BlockElement) {
-        ctx.html += '<pre><code>' +
-            (<CodeBlock>(el)).body +
-            +'</pre></code>';
+        let codeBlock: CodeBlock = <CodeBlock>(el);
+        if (codeBlock.language && this.highlight) {
+            codeBlock.body = this.highlight(codeBlock.body, codeBlock.language);
+        }
+
+        ctx.html += '<pre><code' +
+            (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
+            (<CodeBlock>(el)).body + '</pre></code>';
     }
 
     protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {
@@ -187,7 +235,10 @@ class Renderer {
     }
 
     protected renderInlinePlain(ctx: RenderContext, el: BlockElement) {
-        ctx.html += (<InlinePlain>(el)).content;
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += this.enableLaTeX ?
+            this.latexParser.tex(ctx.texCtx, new StringStream((<InlinePlain>(el)).content)) :
+            (<InlinePlain>(el)).content;
     }
 
     protected renderLink(ctx: RenderContext, el: BlockElement) {
@@ -203,7 +254,10 @@ class Renderer {
         if (link.title) {
             ctx.html += ' title="' + link.title + '"';
         }
-        ctx.html += '>' + link.linkTitle + '</a>';
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += '>' + (
+            this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(link.linkTitle)) :
+                link.linkTitle) + '</a>';
     }
 
     protected renderImageLink(ctx: RenderContext, el: BlockElement) {
@@ -218,12 +272,28 @@ class Renderer {
         ctx.html += '<img src="' + link.link + '"' + '" alt="' + link.linkTitle + '"' +
             (link.title ? ' title="' + link.title + '"' : '') +
             "/>";
+    }
 
+    protected renderMathBlock(ctx: RenderContext, el: BlockElement) {
+        let mathBlock: MathBlock = <MathBlock>el;
+        ctx.texCtx.underMathEnv = true;
+        ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (
+            this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(mathBlock.content)) :
+                mathBlock.content) + '</script>';
+    }
+
+    protected renderLatexBlock(ctx: RenderContext, el: BlockElement) {
+        let latexBlock: LateXBlock = <LateXBlock>el;
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += this.latexParser.tex(ctx.texCtx, new StringStream(latexBlock.content));
     }
 
     protected renderEmphasis(ctx: RenderContext, el: BlockElement) {
         let emphasisEl: Emphasis = <Emphasis>el;
-        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + emphasisEl.content +
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + (
+                this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(emphasisEl.content)) :
+                    emphasisEl.content) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
 
@@ -231,7 +301,4 @@ class Renderer {
         ctx.html += '<code>' + (<InlineCode>el).content + '</code>';
     }
 }
-
-
-export {Renderer}
 

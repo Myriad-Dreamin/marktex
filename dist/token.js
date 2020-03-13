@@ -17,6 +17,7 @@ var TokenType;
     TokenType[TokenType["Emphasis"] = 12] = "Emphasis";
     TokenType[TokenType["InlineCode"] = 13] = "InlineCode";
     TokenType[TokenType["MathBlock"] = 14] = "MathBlock";
+    TokenType[TokenType["LatexBlock"] = 15] = "LatexBlock";
 })(TokenType || (TokenType = {}));
 exports.TokenType = TokenType;
 // noinspection JSUnusedGlobalSymbols
@@ -295,9 +296,10 @@ paste it and indent it, and Markdown will handle the hassle of encoding the ampe
 brackets.
 */
 class CodeBlock {
-    constructor(body) {
+    constructor(body, language) {
         this.token_type = TokenType.CodeBlock;
         this.body = body;
+        this.language = language;
     }
 }
 exports.CodeBlock = CodeBlock;
@@ -401,18 +403,33 @@ class Emphasis {
         this.level = level;
     }
 }
+
 exports.Emphasis = Emphasis;
+
 class InlineCode {
     constructor(content) {
         this.token_type = TokenType.InlineCode;
         this.content = content;
     }
 }
+
 exports.InlineCode = InlineCode;
-// noinspection JSUnusedGlobalSymbols
-class MathBlock {
-    constructor() {
-        this.token_type = TokenType.MathBlock;
+
+class LateXBlock {
+    constructor(content) {
+        this.token_type = TokenType.LatexBlock;
+        this.content = content;
     }
 }
+
+exports.LateXBlock = LateXBlock;
+
+class MathBlock {
+    constructor(content, inline) {
+        this.token_type = TokenType.MathBlock;
+        this.content = content;
+        this.inline = inline;
+    }
+}
+
 exports.MathBlock = MathBlock;

@@ -2,10 +2,38 @@
 Object.defineProperty(exports, "__esModule", {value: true});
 const token_1 = require("./token");
 const source_1 = require("./source");
-const options_1 = require("./options");
+
+class RegExpWithTagName extends RegExp {
+    constructor(r, gIndex) {
+        super(r);
+        this.gIndex = gIndex;
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    getTagName(g) {
+        return g[this.gIndex];
+    }
+}
+
+exports.RegExpWithTagName = RegExpWithTagName;
+
+class OpenTagRegExp extends RegExpWithTagName {
+    constructor(r, gIndex, gOpenIndex) {
+        super(r, gIndex);
+        this.gOpenIndex = gOpenIndex;
+    }
+
+    isSingleton(g) {
+        return g[this.gOpenIndex] !== '/';
+    }
+}
+
+exports.OpenTagRegExp = OpenTagRegExp;
+
 function forward(s, capturing) {
     s.forward(capturing[0].length);
 }
+
 const validTags = function () {
     let validTags = /^<open_tag>|<close_tag>|<comment>|<processing_instruction>|<declaration>|<cdata>/.source;
     let open_tag = /(?:<(<tag_name>)(?:\s*<attribute>)*\s*(\/?)>)/.source;
@@ -34,8 +62,8 @@ const validTags = function () {
         .replace('<cdata>', cdata.source);
     return {
         validTags: new RegExp(validTags),
-        open_tag: new options_1.OpenTagRegExp(new RegExp(open_tag), 1, 2),
-        close_tag: new options_1.RegExpWithTagName(new RegExp(close_tag), 1),
+        open_tag: new OpenTagRegExp(new RegExp(open_tag), 1, 2),
+        close_tag: new RegExpWithTagName(new RegExp(close_tag), 1),
         comment,
         others: [processing_instruction, declaration, cdata],
     };
@@ -61,7 +89,7 @@ class ParagraphRule {
     constructor() {
         this.name = "Paragraph";
         this.description = "Standard Markdown Block Rule";
-        this.regex = /^(?:.(?:\n|$)?)+/;
+        this.regex = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
     }
     match(s, ctx) {
         let capturing = this.regex.exec(s.source);
@@ -154,7 +182,7 @@ class HorizontalRule {
     constructor() {
         this.name = "Horizontal";
         this.description = "Standard Markdown Block Rule";
-        this.regex = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})\n?/;
+        this.regex = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})(?:\n|$)/;
     }
     match(s, _) {
         let capturing = this.regex.exec(s.source);
@@ -171,10 +199,9 @@ class CodeBlockRule {
     constructor() {
         this.name = "CodeBlock";
         this.description = "Standard Markdown Block Rule";
-        this.regex = /^((?: {4}|\t)[^\n]+(\n|$))+/;
     }
     match(s, _) {
-        let capturing = this.regex.exec(s.source);
+        let capturing = CodeBlockRule.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
@@ -183,7 +210,9 @@ class CodeBlockRule {
     }
     ;
 }
+
 exports.CodeBlockRule = CodeBlockRule;
+CodeBlockRule.regex = /^((?: {4}|\t)[^\n]+(\n|$))+/;
 class HeaderBlockRule {
     constructor() {
         this.name = "HeaderBlock";
@@ -191,12 +220,10 @@ class HeaderBlockRule {
         this.atxRegex = /^(#{1,6}) ([^\n]*?)#*(?:\n|$)/;
         this.setextRegex = /^([^\n]+)\n=+(?:\n|$)/;
     }
-
     match(s, ctx) {
         return this.matchATX(s, ctx) || this.matchSetext(s, ctx);
     }
     ;
-
     matchATX(s, ctx) {
         let capturing = this.atxRegex.exec(s.source);
         if (capturing === null) {
@@ -205,7 +232,6 @@ class HeaderBlockRule {
         forward(s, capturing);
         return new token_1.HeaderBlock(ctx.parseInlineElements(new source_1.StringStream(capturing[2])), capturing[1].length);
     }
-
     matchSetext(s, ctx) {
         let capturing = this.setextRegex.exec(s.source);
         if (capturing === null) {
@@ -234,14 +260,15 @@ class LinkDefinitionRule {
 }
 exports.LinkDefinitionRule = LinkDefinitionRule;
 class HTMLBlockRule {
-    constructor() {
+    constructor(validTags) {
         this.name = "HTMLBlock";
         this.description = "Standard Markdown Block Rule";
+        this.validTags = validTags;
     }
     // public readonly singleTonRegex: RegExp = /^/;
     // public readonly stdRegex: RegExp = /^/;
     match(s, ctx) {
-        let ot = ctx.options.validTags.open_tag;
+        let ot = this.validTags.open_tag;
         let capturing = ot.exec(s.source);
         if (capturing === null) {
             return undefined;
@@ -253,13 +280,118 @@ class HTMLBlockRule {
     }
     ;
 }
+
 exports.HTMLBlockRule = HTMLBlockRule;
+
+function _braceMatch(s, l, r) {
+    if (s.source[0] == l) {
+        let c = 0;
+        for (let j = 0; j < s.source.length; j++) {
+            if (s.source[j] == l) {
+                c++;
+            } else if (s.source[j] == r) {
+                c--;
+                if (c === 0) {
+                    let res = s.source.slice(0, j + 1);
+                    s.forward(j + 1);
+                    return res;
+                }
+            }
+        }
+        let res = s.source;
+        s.forward(s.source.length);
+        return res;
+    }
+    return '';
+}
+
+class InlineLatexCommandRule {
+    constructor() {
+        this.name = "InlineLatexCommand";
+        this.description = "Latex Inline Rule";
+    }
+
+    match(s, _) {
+        let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+        forward(s, capturing);
+        return new token_1.InlinePlain(capturing[0] + this.braceMatch(s));
+    }
+
+    braceMatch(s) {
+        let res = '';
+        for (let i = 0; !s.eof; i = 0) {
+            for (; !s.eof && ' \n\t\v\f\r'.includes(s.source[i]); i++) {
+            }
+            if (!'[{'.includes(s.source[i])) {
+                return res;
+            }
+            if (i) {
+                res += s.source.slice(0, i);
+                s.forward(i);
+            }
+            res += _braceMatch(s, '{', '}');
+            res += _braceMatch(s, '[', ']');
+        }
+        return res;
+    }
+}
+
+exports.InlineLatexCommandRule = InlineLatexCommandRule;
+InlineLatexCommandRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
+
+class LatexBlockRule {
+    constructor() {
+        this.name = "LatexBlock";
+        this.description = "Latex Inline Rule";
+    }
+
+    match(s, _) {
+        let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+        forward(s, capturing);
+        return new token_1.LateXBlock(capturing[0] + this.braceMatch(s));
+    }
+
+    braceMatch(s) {
+        let res = '';
+        for (let i = 0; !s.eof; i = 0) {
+            for (; !s.eof && ' \t\v\f\r'.includes(s.source[i]); i++) {
+            }
+            if (s.source[i] == '\n') {
+                i++;
+                if (s.source[i] == '\n') {
+                    s.forward(i);
+                    return res;
+                }
+            }
+            if (!'[{'.includes(s.source[i])) {
+                return res;
+            }
+            if (i) {
+                res += s.source.slice(0, i);
+                s.forward(i);
+            }
+            res += _braceMatch(s, '[', ']');
+            res += _braceMatch(s, '{', '}');
+        }
+        return res;
+    }
+}
+
+LatexBlockRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
+
 class InlinePlainExceptSpecialMarksRule {
     constructor() {
         this.name = "InlinePlainExceptSpecialMarks";
         this.description = "Standard Markdown Inline Rule";
-        this.regex = /^(?:\\[<`_*\[]|[^<`_*\[])+/;
+        this.regex = /^(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+/;
     }
+
     match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -275,7 +407,7 @@ class InlinePlainRule {
     constructor() {
         this.name = "InlinePlain";
         this.description = "Standard Markdown Inline Rule";
-        this.regex = /^[\s\S]+/;
+        this.regex = /^(?:[<`_*\[$\\](?:\\[<`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+)/;
     }
     match(s, _) {
         let capturing = this.regex.exec(s.source);
@@ -287,7 +419,47 @@ class InlinePlainRule {
     }
     ;
 }
+
 exports.InlinePlainRule = InlinePlainRule;
+
+class InlineMathRule {
+    constructor() {
+        this.name = "InlineMath";
+        this.description = "Markdown Inline Rule";
+        this.regex = /^\$((?:[^$]|\\\$)+)\$/;
+    }
+
+    match(s, _) {
+        let capturing = this.regex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+        forward(s, capturing);
+        return new token_1.MathBlock(capturing[1], true);
+    }
+    ;
+}
+
+exports.InlineMathRule = InlineMathRule;
+
+class MathBlockRule {
+    constructor() {
+        this.name = "MathBlock";
+        this.description = "Markdown Block Rule";
+        this.regex = /^\$\$((?:[^$]|\\\$)+)\$\$/;
+    }
+
+    match(s, _) {
+        let capturing = this.regex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+        forward(s, capturing);
+        return new token_1.MathBlock(capturing[1], false);
+    }
+    ;
+}
+
 class LinkOrImageRule {
     constructor() {
         this.name = "Link";
@@ -295,6 +467,7 @@ class LinkOrImageRule {
         this.regex = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
         this.refRegex = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\s*\[([^\]]*)]/;
     }
+
     match(s, ctx) {
         return this.matchInline(s, ctx) || this.matchRef(s, ctx);
     }
@@ -366,33 +539,45 @@ class InlineCodeRule {
     }
     ;
 }
+
 exports.InlineCodeRule = InlineCodeRule;
-const inlineRules = [
-    new InlinePlainExceptSpecialMarksRule(),
-    new LinkOrImageRule(),
-    new EmphasisRule(),
-    new InlineCodeRule(),
-    new InlinePlainRule(),
-];
+
+class GFMFencedCodeBlockRule {
+    constructor() {
+        this.name = "GFMCodeBlock";
+        this.description = "GFM Markdown Block Rule";
+    }
+
+    match(s, _) {
+        let capturing = GFMFencedCodeBlockRule.backtickRegex.exec(s.source);
+        if (capturing === null) {
+            capturing = GFMFencedCodeBlockRule.tildeRegex.exec(s.source);
+            if (capturing === null) {
+                return undefined;
+            }
+        }
+        forward(s, capturing);
+        return new token_1.CodeBlock(capturing[3], capturing[2]);
+    }
+    ;
+}
+
+exports.GFMFencedCodeBlockRule = GFMFencedCodeBlockRule;
+GFMFencedCodeBlockRule.backtickRegex = /^(`{3,}) *([^`\s]+)?[^`\n]*(?:\n|$)([\s\S]*?)(?:\1`*|$)/;
+GFMFencedCodeBlockRule.tildeRegex = /^(~{3,}) *([^~\s]+)?.*(?:\n|$)([\s\S]*?)(?:\1~*|$)/;
+const inlineRules = newInlineRules();
 exports.inlineRules = inlineRules;
-const blockRules = [
-    new NewLineRule(),
-    new CodeBlockRule(),
-    new LinkDefinitionRule(),
-    // new HTMLBlockRule(),
-    new QuotesRule(),
-    new HeaderBlockRule(),
-    new HorizontalRule(),
-    new ListBlockRule(),
-    new ParagraphRule(),
-];
+const blockRules = newBlockRules();
 exports.blockRules = blockRules;
+
 // noinspection JSUnusedGlobalSymbols
-function newBlockRules(enableHtml) {
+function newBlockRules(opts) {
     let rules0 = [
         new NewLineRule(),
         new CodeBlockRule(),
         new LinkDefinitionRule(),
+        new MathBlockRule(),
+        new LatexBlockRule(),
     ];
     let rules1 = [
         new QuotesRule(),
@@ -403,9 +588,35 @@ function newBlockRules(enableHtml) {
     let rules2 = [
         new ParagraphRule(),
     ];
-    if (enableHtml) {
-        rules0.push(new HTMLBlockRule());
+    // default enable
+    if ((opts === null || opts === void 0 ? void 0 : opts.enableGFMRules) !== false) {
+        rules0.push(new GFMFencedCodeBlockRule());
+    }
+    if (opts === null || opts === void 0 ? void 0 : opts.enableHtml) {
+        rules0.push(new HTMLBlockRule((opts === null || opts === void 0 ? void 0 : opts.validTags) || validTags));
     }
     return [...rules0, ...rules1, ...rules2];
 }
+
 exports.newBlockRules = newBlockRules;
+
+// noinspection JSUnusedGlobalSymbols
+function newInlineRules(opts) {
+    let rules0 = [
+        new InlinePlainExceptSpecialMarksRule(),
+        new LinkOrImageRule(),
+        new InlineMathRule(),
+    ];
+    let rules1 = [
+        new EmphasisRule(),
+        new InlineCodeRule(),
+        new InlinePlainRule(),
+    ];
+    // default not enable
+    if ((opts === null || opts === void 0 ? void 0 : opts.enableLaTeX) !== false) {
+        rules0.push(new InlineLatexCommandRule());
+    }
+    return [...rules0, ...rules1];
+}
+
+exports.newInlineRules = newInlineRules;

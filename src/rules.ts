@@ -9,21 +9,57 @@ import {
     InlineCode,
     InlineElement,
     InlinePlain,
+    LateXBlock,
     Link,
     LinkDefinition,
     ListBlock,
     ListElement,
+    MathBlock,
     MaybeToken,
     NewLine,
     Paragraph,
     Quotes
 } from "./token";
 import {StringStream} from './source';
-import {HTMLTagsRegexps, OpenTagRegExp, RegExpWithTagName, RuleOptions} from "./options";
+
+
+export class RegExpWithTagName extends RegExp {
+    protected gIndex: number;
+
+    constructor(r: RegExp, gIndex: number) {
+        super(r);
+        this.gIndex = gIndex;
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    getTagName(g: RegExpExecArray): string {
+        return g[this.gIndex];
+    }
+}
+
+export class OpenTagRegExp extends RegExpWithTagName {
+    protected gOpenIndex: number;
+
+    constructor(r: RegExp, gIndex: number, gOpenIndex: number) {
+        super(r, gIndex);
+        this.gOpenIndex = gOpenIndex;
+    }
+
+    isSingleton(g: RegExpExecArray): boolean {
+        return g[this.gOpenIndex] !== '/'
+    }
+}
+
+export interface HTMLTagsRegexps {
+    validTags: RegExp;
+    open_tag: OpenTagRegExp;
+    close_tag: RegExpWithTagName;
+    comment: RegExp;
+    others: RegExp[];
+}
 
 
 interface RuleContext {
-    options: RuleOptions
 
     parseBlockElement(source: StringStream): BlockElement
 
@@ -111,7 +147,7 @@ class ParagraphRule implements Rule {
     readonly name: string = "Paragraph";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^(?:.(?:\n|$)?)+/;
+    public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -212,7 +248,7 @@ class HorizontalRule implements Rule {
     readonly name: string = "Horizontal";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})\n?/;
+    public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})(?:\n|$)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -230,10 +266,10 @@ class CodeBlockRule implements Rule {
     readonly name: string = "CodeBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^((?: {4}|\t)[^\n]+(\n|$))+/;
+    public static readonly regex: RegExp = /^((?: {4}|\t)[^\n]+(\n|$))+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
+        let capturing = CodeBlockRule.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
@@ -291,12 +327,18 @@ class LinkDefinitionRule implements Rule {
 class HTMLBlockRule implements Rule {
     readonly name: string = "HTMLBlock";
     readonly description: string = "Standard Markdown Block Rule";
+    private validTags: HTMLTagsRegexps;
+
+    constructor(validTags: HTMLTagsRegexps) {
+        this.validTags = validTags;
+    }
+
 
     // public readonly singleTonRegex: RegExp = /^/;
     // public readonly stdRegex: RegExp = /^/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let ot: OpenTagRegExp = ctx.options.validTags.open_tag;
+        let ot: OpenTagRegExp = this.validTags.open_tag;
         let capturing = ot.exec(s.source);
         if (capturing === null) {
             return undefined;
@@ -310,11 +352,110 @@ class HTMLBlockRule implements Rule {
     };
 }
 
+function _braceMatch(s: StringStream, l: string, r: string): string {
+    if (s.source[0] == l) {
+        let c: number = 0;
+        for (let j = 0; j < s.source.length; j++) {
+            if (s.source[j] == l) {
+                c++;
+            } else if (s.source[j] == r) {
+                c--;
+                if (c === 0) {
+                    let res = s.source.slice(0, j + 1);
+                    s.forward(j + 1);
+                    return res;
+                }
+            }
+        }
+        let res = s.source;
+        s.forward(s.source.length);
+        return res;
+    }
+    return '';
+}
+
+class InlineLatexCommandRule implements Rule {
+    readonly name: string = "InlineLatexCommand";
+    readonly description: string = "Latex Inline Rule";
+
+    public static readonly cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        forward(s, capturing);
+        return new InlinePlain(capturing[0] + this.braceMatch(s));
+    }
+
+    braceMatch(s: StringStream) {
+        let res: string = '';
+        for (let i = 0; !s.eof; i = 0) {
+            for (; !s.eof && ' \n\t\v\f\r'.includes(s.source[i]); i++) {
+            }
+            if (!'[{'.includes(s.source[i])) {
+                return res;
+            }
+            if (i) {
+                res += s.source.slice(0, i);
+                s.forward(i);
+            }
+            res += _braceMatch(s, '{', '}');
+            res += _braceMatch(s, '[', ']');
+        }
+        return res;
+    }
+}
+
+class LatexBlockRule implements Rule {
+    readonly name: string = "LatexBlock";
+    readonly description: string = "Latex Inline Rule";
+
+    public static readonly cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        forward(s, capturing);
+        return new LateXBlock(capturing[0] + this.braceMatch(s));
+    }
+
+    braceMatch(s: StringStream) {
+        let res: string = '';
+        for (let i = 0; !s.eof; i = 0) {
+            for (; !s.eof && ' \t\v\f\r'.includes(s.source[i]); i++) {
+            }
+            if (s.source[i] == '\n') {
+                i++;
+                if (s.source[i] == '\n') {
+                    s.forward(i);
+                    return res;
+                }
+            }
+            if (!'[{'.includes(s.source[i])) {
+                return res;
+            }
+            if (i) {
+                res += s.source.slice(0, i);
+                s.forward(i);
+            }
+            res += _braceMatch(s, '[', ']');
+            res += _braceMatch(s, '{', '}');
+        }
+        return res;
+    }
+}
+
 class InlinePlainExceptSpecialMarksRule implements Rule {
     readonly name: string = "InlinePlainExceptSpecialMarks";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:\\[<`_*\[]|[^<`_*\[])+/;
+    public readonly regex: RegExp = /^(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -331,7 +472,7 @@ class InlinePlainRule implements Rule {
     readonly name: string = "InlinePlain";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^[\s\S]+/;
+    public readonly regex: RegExp = /^(?:[<`_*\[$\\](?:\\[<`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -341,6 +482,40 @@ class InlinePlainRule implements Rule {
 
         forward(s, capturing);
         return new InlinePlain(capturing[0]);
+    };
+}
+
+class InlineMathRule implements Rule {
+    readonly name: string = "InlineMath";
+    readonly description: string = "Markdown Inline Rule";
+
+    public readonly regex: RegExp = /^\$((?:[^$]|\\\$)+)\$/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = this.regex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        forward(s, capturing);
+        return new MathBlock(capturing[1], true);
+    };
+}
+
+class MathBlockRule implements Rule {
+    readonly name: string = "MathBlock";
+    readonly description: string = "Markdown Block Rule";
+
+    public readonly regex: RegExp = /^\$\$((?:[^$]|\\\$)+)\$\$/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = this.regex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        forward(s, capturing);
+        return new MathBlock(capturing[1], false);
     };
 }
 
@@ -429,32 +604,47 @@ class InlineCodeRule implements Rule {
     };
 }
 
-const inlineRules: Rule[] = [
-    new InlinePlainExceptSpecialMarksRule(),
-    new LinkOrImageRule(),
-    new EmphasisRule(),
-    new InlineCodeRule(),
-    new InlinePlainRule(),
-];
 
-const blockRules: Rule[] = [
-    new NewLineRule(),
-    new CodeBlockRule(),
-    new LinkDefinitionRule(),
-    // new HTMLBlockRule(),
-    new QuotesRule(),
-    new HeaderBlockRule(),
-    new HorizontalRule(),
-    new ListBlockRule(),
-    new ParagraphRule(),
-];
+class GFMFencedCodeBlockRule implements Rule {
+    readonly name: string = "GFMCodeBlock";
+    readonly description: string = "GFM Markdown Block Rule";
+
+    public static readonly backtickRegex: RegExp = /^(`{3,}) *([^`\s]+)?[^`\n]*(?:\n|$)([\s\S]*?)(?:\1`*|$)/;
+    public static readonly tildeRegex: RegExp = /^(~{3,}) *([^~\s]+)?.*(?:\n|$)([\s\S]*?)(?:\1~*|$)/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = GFMFencedCodeBlockRule.backtickRegex.exec(s.source);
+        if (capturing === null) {
+            capturing = GFMFencedCodeBlockRule.tildeRegex.exec(s.source);
+            if (capturing === null) {
+                return undefined;
+            }
+        }
+
+        forward(s, capturing);
+        return new CodeBlock(capturing[3], capturing[2]);
+    };
+}
+
+const inlineRules: Rule[] = newInlineRules();
+
+const blockRules: Rule[] = newBlockRules();
+
+export interface CreateBlockRuleOptions {
+    enableHtml?: boolean;
+    enableGFMRules?: boolean;
+    validTags?: HTMLTagsRegexps;
+}
 
 // noinspection JSUnusedGlobalSymbols
-export function newBlockRules(enableHtml: boolean): Rule[] {
+export function newBlockRules(
+    opts?: CreateBlockRuleOptions): Rule[] {
     let rules0: Rule[] = [
         new NewLineRule(),
         new CodeBlockRule(),
         new LinkDefinitionRule(),
+        new MathBlockRule(),
+        new LatexBlockRule(),
     ];
 
     let rules1: Rule[] = [
@@ -468,21 +658,59 @@ export function newBlockRules(enableHtml: boolean): Rule[] {
         new ParagraphRule(),
     ];
 
-    if (enableHtml) {
-        rules0.push(new HTMLBlockRule());
+    // default enable
+    if (opts?.enableGFMRules !== false) {
+        rules0.push(new GFMFencedCodeBlockRule());
+    }
+
+    if (opts?.enableHtml) {
+        rules0.push(new HTMLBlockRule(opts?.validTags || validTags));
     }
 
     return [...rules0, ...rules1, ...rules2];
+}
+
+export interface CreateInlineRuleOptions {
+    enableLaTeX?: boolean;
+}
+
+// noinspection JSUnusedGlobalSymbols
+export function newInlineRules(
+    opts?: CreateInlineRuleOptions): Rule[] {
+    let rules0: Rule[] = [
+        new InlinePlainExceptSpecialMarksRule(),
+        new LinkOrImageRule(),
+        new InlineMathRule(),
+    ];
+
+    let rules1: Rule[] = [
+        new EmphasisRule(),
+        new InlineCodeRule(),
+        new InlinePlainRule(),
+    ];
+
+    // default not enable
+    if (opts?.enableLaTeX !== false) {
+        rules0.push(new InlineLatexCommandRule());
+    }
+
+    return [...rules0, ...rules1];
+}
+
+export interface CreateRuleOptions extends CreateInlineRuleOptions, CreateBlockRuleOptions {
+
 }
 
 
 export {Rule, RuleContext, validTags, inlineRules, blockRules};
 
 export {
-    InlinePlainExceptSpecialMarksRule, LinkOrImageRule, EmphasisRule, InlineCodeRule, InlinePlainRule,
+    InlinePlainExceptSpecialMarksRule, LinkOrImageRule, InlineLatexCommandRule,
+    InlineMathRule, EmphasisRule, InlineCodeRule, InlinePlainRule,
 };
 export {
     CodeBlockRule,
+    GFMFencedCodeBlockRule,
     ParagraphRule,
     LinkDefinitionRule,
     QuotesRule,

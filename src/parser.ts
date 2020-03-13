@@ -1,20 +1,22 @@
 import {StringStream} from './source';
 import {BlockElement, InlineElement, InlinePlain, MaybeToken, TokenType} from "./token";
-import {Rule} from "./rules";
-import {RuleOptions} from "./options";
+import {blockRules, inlineRules, Rule} from "./rules";
 
-class Parser {
+export interface ParserOptions {
+    inlineRules?: Rule[];
+    blockRules?: Rule[];
+}
+
+export class Parser {
     protected blockRules: Rule[];
     protected inlineRules: Rule[];
-    public readonly options: RuleOptions;
 
-    public constructor(
-        {inlineRules, blockRules}: { inlineRules: Rule[], blockRules: Rule[] },
-        options: RuleOptions) {
-        this.inlineRules = inlineRules;
-        this.blockRules = blockRules;
-        this.options = options;
+    public constructor(options?: ParserOptions) {
+
+        this.inlineRules = options?.inlineRules || inlineRules;
+        this.blockRules = options?.blockRules || blockRules;
     }
+
 
     parseBlockElement(source: StringStream): BlockElement {
         return this._parse(source, this.blockRules)
@@ -60,6 +62,3 @@ class Parser {
         throw new Error("no rule match the stream at pos " + source.pos);
     }
 }
-
-
-export {Parser};
