@@ -1,6 +1,6 @@
 {
   "name": "marktex.js",
-  "version": "0.1.2",
+  "version": "0.1.2-2",
   "description": "markdown parser",
   "main": "dist/index.js",
   "scripts": {
