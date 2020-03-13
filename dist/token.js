@@ -219,8 +219,8 @@ class ListBlock {
             return '0' <= s.source[0] && s.source[0] <= '9';
         } else if ('*+-'.includes(s.source[0])) {
             let j = 0;
-            for (let i = 0; s.source[i] && s.source[i] != '\n'; i++) {
-                if (s.source[i] == s.source[0]) {
+            for (let i = 0; s.source[i] && s.source[i] !== '\n'; i++) {
+                if (s.source[i] === s.source[0]) {
                     j++;
                 } else if (!'\t\r\v\f '.includes(s.source[i])) {
                     j = 0;
@@ -236,7 +236,7 @@ class ListBlock {
             if ('0' <= s.source[i] && s.source[i] <= '9') {
                 continue;
             }
-            if (s.source[i] == '.' && s.source[i + 1] == ' ') {
+            if (s.source[i] === '.' && s.source[i + 1] === ' ') {
                 let m = s.source.substr(0, i);
                 s.forward(i + 2);
                 return m;
@@ -245,7 +245,7 @@ class ListBlock {
         }
     }
     static lookAheadUnorderedListMarker(s) {
-        if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
+        if ('*+-'.includes(s.source[0]) && s.source[1] === ' ') {
             let m = s.source[0];
             s.forward(2);
             return m;
@@ -295,9 +295,10 @@ paste it and indent it, and Markdown will handle the hassle of encoding the ampe
 brackets.
 */
 class CodeBlock {
-    constructor(body) {
+    constructor(body, language) {
         this.token_type = TokenType.CodeBlock;
         this.body = body;
+        this.language = language;
     }
 }
 exports.CodeBlock = CodeBlock;

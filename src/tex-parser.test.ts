@@ -8,7 +8,8 @@ describe('LaTeX parser ', () => {
     it('can parse', () => {
         console.log(parser.tex({
             texCommands,
-            texCommandDefs: {}
+            texCommandDefs: {},
+            underMathEnv: false,
         }, new StringStream(
             '' +
             '\\newcommand{\\d}{\\mathmd{d}}' +

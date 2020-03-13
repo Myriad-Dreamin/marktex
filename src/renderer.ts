@@ -17,16 +17,18 @@ import {
     Token,
     TokenType
 } from "./token";
+import {commandFunc, LaTeXParser, texCommands, TexContext} from "./tex-parser";
 
 export type HighlightFunc = (code: string, language: string) => string;
 
 export interface RenderContext {
-    readonly render: Renderer,
-    readonly next: () => void,
-    readonly tokens: Token[],
+    readonly render: Renderer;
+    readonly next: () => void;
+    readonly tokens: Token[];
 
-    linkDefs: { [linkIdentifier: string]: LinkDefinition },
-    html: string,
+    linkDefs: { [linkIdentifier: string]: LinkDefinition };
+    html: string;
+    texCtx: TexContext;
 }
 
 export type RenderMiddleware = (ctx: RenderContext) => void;
@@ -36,12 +38,17 @@ export interface RenderOptions {
     originStack?: RenderMiddleware[],
     wrapCodeClassTag?: (language: string) => string,
     highlight?: HighlightFunc,
+    enableLaTeX?: boolean,
 }
 
 export class Renderer {
     protected parser: Parser;
     private stack: RenderMiddleware[];
+    private readonly texCommands: { [p: string]: commandFunc };
+    private latexParser: LaTeXParser;
+
     protected highlight?: HighlightFunc;
+    protected enableLaTeX?: boolean;
 
     public constructor(parser: Parser, opts?: RenderOptions) {
         this.parser = parser;
@@ -51,10 +58,14 @@ export class Renderer {
         };
         if (opts) {
             this.highlight = opts.highlight;
+            this.enableLaTeX = opts.enableLaTeX;
+
             if (opts.wrapCodeClassTag) {
                 this.wrapCodeClassTag = opts.wrapCodeClassTag;
             }
         }
+        this.texCommands = texCommands;
+        this.latexParser = new LaTeXParser();
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -63,10 +74,13 @@ export class Renderer {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    public render(s: StringStream): string {
+    public render(s: StringStream, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {
         let stackIndex: number = 0;
         let ctx: RenderContext = {
-            render: this, tokens: this.parser.parseBlockElements(s), linkDefs: {}, html: '', next() {
+            render: this, tokens: this.parser.parseBlockElements(s), linkDefs: {}, html: '', texCtx: {
+                texCommands: this.texCommands,
+                texCommandDefs: mdFieldTexCommands || {},
+            }, next() {
                 for (; stackIndex < ctx.render.stack.length;) {
                     ctx.render.stack[stackIndex++](ctx);
                 }
@@ -120,7 +134,7 @@ export class Renderer {
             case TokenType.CodeBlock:
                 this.renderCodeBlock(ctx, el);
                 break;
-                // can latex
+            // can latex
             case TokenType.HTMLBlock:
                 this.renderHTMLBlock(ctx, el);
                 break;
@@ -216,7 +230,10 @@ export class Renderer {
     }
 
     protected renderInlinePlain(ctx: RenderContext, el: BlockElement) {
-        ctx.html += (<InlinePlain>(el)).content;
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += this.enableLaTeX ?
+            this.latexParser.tex(ctx.texCtx, new StringStream((<InlinePlain>(el)).content)) :
+            (<InlinePlain>(el)).content;
     }
 
     protected renderLink(ctx: RenderContext, el: BlockElement) {
@@ -232,7 +249,10 @@ export class Renderer {
         if (link.title) {
             ctx.html += ' title="' + link.title + '"';
         }
-        ctx.html += '>' + link.linkTitle + '</a>';
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += '>' + (
+            this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(link.linkTitle)) :
+                link.linkTitle) + '</a>';
     }
 
     protected renderImageLink(ctx: RenderContext, el: BlockElement) {
@@ -252,7 +272,10 @@ export class Renderer {
 
     protected renderEmphasis(ctx: RenderContext, el: BlockElement) {
         let emphasisEl: Emphasis = <Emphasis>el;
-        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + emphasisEl.content +
+        ctx.texCtx.underMathEnv = false;
+        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + (
+                this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(emphasisEl.content)) :
+                    emphasisEl.content) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
 

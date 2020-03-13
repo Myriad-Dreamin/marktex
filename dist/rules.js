@@ -2,10 +2,38 @@
 Object.defineProperty(exports, "__esModule", {value: true});
 const token_1 = require("./token");
 const source_1 = require("./source");
-const options_1 = require("./options");
+
+class RegExpWithTagName extends RegExp {
+    constructor(r, gIndex) {
+        super(r);
+        this.gIndex = gIndex;
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    getTagName(g) {
+        return g[this.gIndex];
+    }
+}
+
+exports.RegExpWithTagName = RegExpWithTagName;
+
+class OpenTagRegExp extends RegExpWithTagName {
+    constructor(r, gIndex, gOpenIndex) {
+        super(r, gIndex);
+        this.gOpenIndex = gOpenIndex;
+    }
+
+    isSingleton(g) {
+        return g[this.gOpenIndex] !== '/';
+    }
+}
+
+exports.OpenTagRegExp = OpenTagRegExp;
+
 function forward(s, capturing) {
     s.forward(capturing[0].length);
 }
+
 const validTags = function () {
     let validTags = /^<open_tag>|<close_tag>|<comment>|<processing_instruction>|<declaration>|<cdata>/.source;
     let open_tag = /(?:<(<tag_name>)(?:\s*<attribute>)*\s*(\/?)>)/.source;
@@ -34,8 +62,8 @@ const validTags = function () {
         .replace('<cdata>', cdata.source);
     return {
         validTags: new RegExp(validTags),
-        open_tag: new options_1.OpenTagRegExp(new RegExp(open_tag), 1, 2),
-        close_tag: new options_1.RegExpWithTagName(new RegExp(close_tag), 1),
+        open_tag: new OpenTagRegExp(new RegExp(open_tag), 1, 2),
+        close_tag: new RegExpWithTagName(new RegExp(close_tag), 1),
         comment,
         others: [processing_instruction, declaration, cdata],
     };
@@ -154,7 +182,7 @@ class HorizontalRule {
     constructor() {
         this.name = "Horizontal";
         this.description = "Standard Markdown Block Rule";
-        this.regex = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})\n?/;
+        this.regex = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})(?:\n|$)/;
     }
     match(s, _) {
         let capturing = this.regex.exec(s.source);
@@ -171,10 +199,9 @@ class CodeBlockRule {
     constructor() {
         this.name = "CodeBlock";
         this.description = "Standard Markdown Block Rule";
-        this.regex = /^((?: {4}|\t)[^\n]+(\n|$))+/;
     }
     match(s, _) {
-        let capturing = this.regex.exec(s.source);
+        let capturing = CodeBlockRule.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
@@ -183,7 +210,9 @@ class CodeBlockRule {
     }
     ;
 }
+
 exports.CodeBlockRule = CodeBlockRule;
+CodeBlockRule.regex = /^((?: {4}|\t)[^\n]+(\n|$))+/;
 class HeaderBlockRule {
     constructor() {
         this.name = "HeaderBlock";
@@ -191,12 +220,10 @@ class HeaderBlockRule {
         this.atxRegex = /^(#{1,6}) ([^\n]*?)#*(?:\n|$)/;
         this.setextRegex = /^([^\n]+)\n=+(?:\n|$)/;
     }
-
     match(s, ctx) {
         return this.matchATX(s, ctx) || this.matchSetext(s, ctx);
     }
     ;
-
     matchATX(s, ctx) {
         let capturing = this.atxRegex.exec(s.source);
         if (capturing === null) {
@@ -205,7 +232,6 @@ class HeaderBlockRule {
         forward(s, capturing);
         return new token_1.HeaderBlock(ctx.parseInlineElements(new source_1.StringStream(capturing[2])), capturing[1].length);
     }
-
     matchSetext(s, ctx) {
         let capturing = this.setextRegex.exec(s.source);
         if (capturing === null) {
@@ -233,15 +259,18 @@ class LinkDefinitionRule {
     ;
 }
 exports.LinkDefinitionRule = LinkDefinitionRule;
+
 class HTMLBlockRule {
-    constructor() {
+    constructor(validTags) {
         this.name = "HTMLBlock";
         this.description = "Standard Markdown Block Rule";
+        this.validTags = validTags;
     }
+
     // public readonly singleTonRegex: RegExp = /^/;
     // public readonly stdRegex: RegExp = /^/;
-    match(s, ctx) {
-        let ot = ctx.options.validTags.open_tag;
+    match(s, _) {
+        let ot = this.validTags.open_tag;
         let capturing = ot.exec(s.source);
         if (capturing === null) {
             return undefined;
@@ -366,7 +395,32 @@ class InlineCodeRule {
     }
     ;
 }
+
 exports.InlineCodeRule = InlineCodeRule;
+
+class GFMFencedCodeBlockRule {
+    constructor() {
+        this.name = "GFMCodeBlock";
+        this.description = "GFM Markdown Block Rule";
+    }
+
+    match(s, _) {
+        let capturing = GFMFencedCodeBlockRule.backtickRegex.exec(s.source);
+        if (capturing === null) {
+            capturing = GFMFencedCodeBlockRule.tildeRegex.exec(s.source);
+            if (capturing === null) {
+                return undefined;
+            }
+        }
+        forward(s, capturing);
+        return new token_1.CodeBlock(capturing[3], capturing[2]);
+    }
+    ;
+}
+
+exports.GFMFencedCodeBlockRule = GFMFencedCodeBlockRule;
+GFMFencedCodeBlockRule.backtickRegex = /^(`{3,}) *([^`\s]+)?[^`\n]*(?:\n|$)([\s\S]*?)(?:\1`*|$)/;
+GFMFencedCodeBlockRule.tildeRegex = /^(~{3,}) *([^~\s]+)?.*(?:\n|$)([\s\S]*?)(?:\1~*|$)/;
 const inlineRules = [
     new InlinePlainExceptSpecialMarksRule(),
     new LinkOrImageRule(),
@@ -375,20 +429,10 @@ const inlineRules = [
     new InlinePlainRule(),
 ];
 exports.inlineRules = inlineRules;
-const blockRules = [
-    new NewLineRule(),
-    new CodeBlockRule(),
-    new LinkDefinitionRule(),
-    // new HTMLBlockRule(),
-    new QuotesRule(),
-    new HeaderBlockRule(),
-    new HorizontalRule(),
-    new ListBlockRule(),
-    new ParagraphRule(),
-];
+const blockRules = newBlockRules();
 exports.blockRules = blockRules;
 // noinspection JSUnusedGlobalSymbols
-function newBlockRules(enableHtml) {
+function newBlockRules(opts) {
     let rules0 = [
         new NewLineRule(),
         new CodeBlockRule(),
@@ -403,8 +447,12 @@ function newBlockRules(enableHtml) {
     let rules2 = [
         new ParagraphRule(),
     ];
-    if (enableHtml) {
-        rules0.push(new HTMLBlockRule());
+    // default enable
+    if ((opts === null || opts === void 0 ? void 0 : opts.enableGFMRules) !== false) {
+        rules0.push(new GFMFencedCodeBlockRule());
+    }
+    if (opts === null || opts === void 0 ? void 0 : opts.enableHtml) {
+        rules0.push(new HTMLBlockRule((opts === null || opts === void 0 ? void 0 : opts.validTags) || validTags));
     }
     return [...rules0, ...rules1, ...rules2];
 }
