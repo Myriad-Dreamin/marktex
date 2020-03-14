@@ -11,7 +11,10 @@ describe('author', () => {
 
 describe('renderer', () => {
     it('can render with default option', () => {
-        console.log(myriad.Renderer().renderString('## hello marktex.js'))
+        console.log(myriad.newRenderer().renderString('## hello marktex.js'))
+    });
+    it('can render by default parser option', () => {
+        console.log((new myriad.Renderer(myriad.newParser())).renderString('## hello marktex.js'))
     })
 });
 

@@ -12,22 +12,20 @@ interface Options {
 // noinspection JSUnusedGlobalSymbols
 const myriad = {
     author: "Myriad-Dreamin",
-    Parser(options?: Options): Parser {
+    newParser(options?: Options): Parser {
         return new Parser(options?.parserOptions);
     },
-    Renderer(options?: Options): Renderer {
-        return new Renderer(myriad.Parser(options), options?.rendererOptions);
+    newRenderer(options?: Options): Renderer {
+        return new Renderer(myriad.newParser(options), options?.rendererOptions);
     },
-    StringStream(str: string): StringStream {
+    newStringStream(str: string): StringStream {
         return new StringStream(str);
     },
-    newInlineRules,
-    newBlockRules,
-    newRules,
+    newInlineRules, newBlockRules, newRules,
+    Parser, Renderer, StringStream,
 };
 
 
-export {
-    myriad,
-}
-
+// noinspection JSUnusedGlobalSymbols
+export default myriad;
+export {myriad, Options, Parser, Renderer, StringStream};
