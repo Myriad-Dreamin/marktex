@@ -1,14 +1,12 @@
 import {StringStream} from "./source";
 import {cn_book_md, latex_md, math_md} from "./data.test";
 import {Parser} from "./parser";
-import {newInlineRules} from "./rules";
+import {newRules} from "./rules";
 
 
 describe(
     'parser', () => {
-        let ctx = new Parser({
-            inlineRules: newInlineRules({enableLaTeX: true}),
-        });
+        let ctx = new Parser(newRules({enableLaTeX: true}));
         it('process math.md', () => {
             console.log(JSON.stringify(ctx.parseBlockElements(new StringStream(math_md)), undefined, 2));
         });

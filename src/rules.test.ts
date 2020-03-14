@@ -26,6 +26,7 @@ import {
     LinkDefinition,
     ListBlock,
     ListElement,
+    MathBlock,
     NewLine,
     Paragraph,
     Quotes
@@ -110,13 +111,13 @@ describe("InlinePlainRule", () => {
     match({text: "ggg", matchedLength: "ggg".length, expectedElement: new InlinePlain("ggg")});
     match({text: "ggg\n\n", matchedLength: "ggg\n\n".length, expectedElement: new InlinePlain("ggg\n\n")});
     match({text: "ggg\n\nggg", matchedLength: "ggg\n\nggg".length, expectedElement: new InlinePlain("ggg\n\nggg")});
-    match({text: "   `", matchedLength: 4, expectedElement: new InlinePlain("   `")});
-    match({text: "ggg<", matchedLength: 4, expectedElement: new InlinePlain("ggg<")});
-    match({text: "ggg[", matchedLength: 4, expectedElement: new InlinePlain("ggg[")});
-    match({text: "ggg*", matchedLength: 4, expectedElement: new InlinePlain("ggg*")});
-    match({text: "ggg_", matchedLength: 4, expectedElement: new InlinePlain("ggg_")});
-    match({text: "ggg`", matchedLength: 4, expectedElement: new InlinePlain("ggg`")});
-    match({text: "铜`", matchedLength: 2, expectedElement: new InlinePlain("铜`")});
+    match({text: "   ", matchedLength: 3, expectedElement: new InlinePlain("   ")});
+    match({text: "ggg<", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
+    match({text: "ggg[", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
+    match({text: "ggg*", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
+    match({text: "ggg_", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
+    match({text: "ggg`", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
+    match({text: "铜", matchedLength: 1, expectedElement: new InlinePlain("铜")});
     notMatch({text: ""});
     match({text: "<", matchedLength: 1, expectedElement: new InlinePlain("<")});
     match({text: "[", matchedLength: 1, expectedElement: new InlinePlain("[")});
@@ -352,7 +353,7 @@ describe("LinkDefinitionRule", () => {
 });
 
 describe("ParagraphRule", () => {
-    let rule: ParagraphRule = new ParagraphRule();
+    let rule: ParagraphRule = new ParagraphRule(true);
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
@@ -377,11 +378,47 @@ describe("ParagraphRule", () => {
     });
     match({
         text: "a\n\nqwq",
-        matchedLength: "a\n".length,
+        matchedLength: "a".length,
         expectedElement: new Paragraph(
-            [new InlinePlain("a\n")],
+            [new InlinePlain("a")],
         ),
     });
+    match({
+        text: "a\\inlineLatexRule\n\nqwq",
+        matchedLength: "a\\inlineLatexRule".length,
+        expectedElement: new Paragraph(
+            [new InlinePlain("a\\inlineLatexRule")],
+        ),
+    });
+    match({
+        text: "a\\inlineLatexRule{}{}\n\nqwq",
+        matchedLength: "a\\inlineLatexRule{}{}".length,
+        expectedElement: new Paragraph(
+            [new InlinePlain("a\\inlineLatexRule{}{}")],
+        ),
+    });
+    match({
+        text: "a\n\\blockLatexRule\n\nqwq",
+        matchedLength: "a".length,
+        expectedElement: new Paragraph(
+            [new InlinePlain("a")],
+        ),
+    });
+    match({
+        text: '$A[1...n]=[A[1]...A[n]](n>=1)$总是表示一个数组,$len[A]=n$总是表示一个数组的长度.\n' +
+            '\\subsubsection{数组切片}\n',
+        matchedLength: '$A[1...n]=[A[1]...A[n]](n>=1)$总是表示一个数组,$len[A]=n$总是表示一个数组的长度.'.length,
+        expectedElement: new Paragraph(
+            [
+                new MathBlock("A[1...n]=[A[1]...A[n]](n>=1)", true),
+                new InlinePlain("总是表示一个数组,"),
+                new MathBlock("len[A]=n", true),
+                new InlinePlain("总是表示一个数组的长度."),
+            ],
+        ),
+    });
+
+
     match({
         text: "a\nqwq",
         matchedLength: "a\nqwq".length,
@@ -698,8 +735,8 @@ describe("QuotesRule", () => {
         text: "> a\nqwq\n>\n> a\n",
         matchedLength: "> a\nqwq\n>\n> a\n".length,
         expectedElement: new Quotes([
-            new Paragraph([new InlinePlain("a\nqwq\n")]),
-            new NewLine('\n'),
+            new Paragraph([new InlinePlain("a\nqwq")]),
+            new NewLine('\n\n'),
             new Paragraph([new InlinePlain("a\n")])
         ]),
     });

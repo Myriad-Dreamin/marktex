@@ -9,3 +9,9 @@ describe('author', () => {
     })
 });
 
+describe('renderer', () => {
+    it('can render with default option', () => {
+        console.log(myriad.Renderer().renderString('## hello marktex.js'))
+    })
+});
+

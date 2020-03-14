@@ -40,11 +40,18 @@ class Renderer {
         ctx.next();
         return ctx.html;
     }
+
+    // noinspection JSUnusedGlobalSymbols
+    renderString(s) {
+        return this.render(new source_1.StringStream(s));
+    }
+
     renderElements(ctx, elements) {
         for (let el of elements) {
             ctx.render.handleElement(ctx, el);
         }
     }
+
     createLinkMap(ctx) {
         for (let el of ctx.tokens) {
             if (el.token_type === token_1.TokenType.LinkDefinition) {
@@ -140,19 +147,15 @@ class Renderer {
         }
         ctx.html += '</' + (listBlock.ordered ? 'ol' : 'ul') + '>';
     }
-
     renderHorizontal(ctx, _) {
         ctx.html += "<hr/>";
     }
-
     renderLinkDefinition(_, __) {
         // ignore it
     }
-
     wrapCodeClassTag(language) {
         return 'lang-' + language;
     }
-
     renderCodeBlock(ctx, el) {
         let codeBlock = (el);
         if (codeBlock.language && this.highlight) {
@@ -162,7 +165,6 @@ class Renderer {
             (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
             (el).body + '</pre></code>';
     }
-
     renderHTMLBlock(ctx, el) {
         ctx.html += (el).body;
     }
@@ -206,20 +208,17 @@ class Renderer {
             (link.title ? ' title="' + link.title + '"' : '') +
             "/>";
     }
-
     renderMathBlock(ctx, el) {
         let mathBlock = el;
         ctx.texCtx.underMathEnv = true;
         ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(mathBlock.content)) :
             mathBlock.content) + '</script>';
     }
-
     renderLatexBlock(ctx, el) {
         let latexBlock = el;
         ctx.texCtx.underMathEnv = false;
         ctx.html += this.latexParser.tex(ctx.texCtx, new source_1.StringStream(latexBlock.content));
     }
-
     renderEmphasis(ctx, el) {
         let emphasisEl = el;
         ctx.texCtx.underMathEnv = false;
@@ -227,7 +226,6 @@ class Renderer {
             emphasisEl.content) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
-
     renderInlineCode(ctx, el) {
         ctx.html += '<code>' + el.content + '</code>';
     }

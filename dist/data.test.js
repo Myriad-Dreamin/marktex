@@ -1,11 +1,11 @@
-export const math_md: string = '## 误差分析\n\n误差来源\n\n+ 模型误差\n+ 观测误差\n+ 截断误差\n+ 舍入误差\n\n《数值分析》\n\n理论\n\n+ 绝对误差\n  $\\delta(a) = x - a, |\\delta (a)| \\leqslant \\Delta (a)$';
-
-export const math_md2: string = '' +
+"use strict";
+Object.defineProperty(exports, "__esModule", {value: true});
+exports.math_md = '## 误差分析\n\n误差来源\n\n+ 模型误差\n+ 观测误差\n+ 截断误差\n+ 舍入误差\n\n《数值分析》\n\n理论\n\n+ 绝对误差\n  $\\delta(a) = x - a, |\\delta (a)| \\leqslant \\Delta (a)$';
+exports.math_md2 = '' +
     '$$\n' +
     'T(n)=\\sum_{i=1}^{n}\\gro(i)=\\gro(n^2).\n' +
     '$$';
-
-export const code_md: string = '`a` is ``b``\n' +
+exports.code_md = '`a` is ``b``\n' +
     '\n' +
     '    dd\n' +
     '      ee\n' +
@@ -15,8 +15,7 @@ export const code_md: string = '`a` is ``b``\n' +
     '\n' +
     '  qwq\n' +
     '```';
-
-export const latex_md: string = '' +
+exports.latex_md = '' +
     '\\newcommand{\\brc}[1]{\\left({#1}\\right)}\n' +
     '\\newcommand{\\brm}[1]{\\left[{#1}\\right]}\n' +
     '\\newcommand{\\brv}[1]{\\left|{#1}\\right|}\n' +
@@ -90,8 +89,7 @@ export const latex_md: string = '' +
     '$$\n' +
     'T(n)=\\sum_{i=1}^{n}\\gro(i)=\\gro(n^2).\n' +
     '$$\n';
-
-export const cn_book_md: string = '## [The Cathedral and the Bazaar](http://www.catb.org/~esr/writings/cathedral-bazaar/cathedral-bazaar/index.html#catbmain)\n' +
+exports.cn_book_md = '## [The Cathedral and the Bazaar](http://www.catb.org/~esr/writings/cathedral-bazaar/cathedral-bazaar/index.html#catbmain)\n' +
     '\n' +
     '作者: Eric Steven Raymond\n' +
     '\n' +

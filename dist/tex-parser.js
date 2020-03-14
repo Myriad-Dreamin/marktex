@@ -10,16 +10,13 @@ var BraceType;
     // ()
     // Parenthesis = 2,
 })(BraceType = exports.BraceType || (exports.BraceType = {}));
-
 class LaTeXError extends Error {
     constructor(message) {
         super(message);
         this.name = 'LaTexError';
     }
 }
-
 exports.LaTeXError = LaTeXError;
-
 class LaTeXInvalidCommandError extends LaTeXError {
     constructor(message, args) {
         super(message);
@@ -27,22 +24,16 @@ class LaTeXInvalidCommandError extends LaTeXError {
         this.args = args;
     }
 }
-
 exports.LaTeXInvalidCommandError = LaTeXInvalidCommandError;
-
 function traceError(_, err) {
     console.error(err);
 }
-
 exports.traceError = traceError;
-
 function traceInvalidCommand(cmdName, ctx) {
     // bind is as fast as this
     return (args) => traceError(ctx, new LaTeXInvalidCommandError("the shape of " + cmdName + "'s args is invalid", args));
 }
-
 exports.traceInvalidCommand = traceInvalidCommand;
-
 function expectBraceType(vars, tracer) {
     // bind is as fast as this
     let e = {
@@ -59,9 +50,7 @@ function expectBraceType(vars, tracer) {
     };
     return e;
 }
-
 exports.expectBraceType = expectBraceType;
-
 function expectTheOnlyBrace(vars, tracer) {
     if (vars.length < 1) {
         tracer({
@@ -73,9 +62,7 @@ function expectTheOnlyBrace(vars, tracer) {
     ebt.expect(0, BraceType.Brace);
     return !ebt.failed;
 }
-
 exports.expectTheOnlyBrace = expectTheOnlyBrace;
-
 function releaseVars(vars, n) {
     let res = '';
     for (let i = n; i < vars.length; i++) {
@@ -95,7 +82,6 @@ function releaseVars(vars, n) {
     }
     return res;
 }
-
 let replaceRegex = [
     /(?<!\\)#1/g, /(?<!\\)#2/g, /(?<!\\)#3/g, /(?<!\\)#4/g,
     /(?<!\\)#5/g, /(?<!\\)#6/g, /(?<!\\)#7/g, /(?<!\\)#8/g, /(?<!\\)#9/g,
@@ -181,7 +167,7 @@ exports.texCommands = {
         if (ctx.underMathEnv) {
             return '\\indent';
         }
-        return '<br/>' + tex(ctx, new source_1.StringStream(releaseVars(vars, 0)));
+        return /*'<br/>' + */ tex(ctx, new source_1.StringStream(releaseVars(vars, 0)));
     },
     url(ctx, vars, tex) {
         if (ctx.underMathEnv) {
@@ -234,7 +220,6 @@ exports.texCommands = {
             tex(ctx, new source_1.StringStream(releaseVars(vars, 1)));
     }
 };
-
 function _braceMatch(res, s, l, r, t) {
     if (s.source[0] == l) {
         let c = 0;
@@ -254,7 +239,6 @@ function _braceMatch(res, s, l, r, t) {
     }
     return;
 }
-
 function braceMatch(s) {
     let res = [];
     for (let i = 0; !s.eof; i = 0) {
@@ -271,7 +255,6 @@ function braceMatch(s) {
     }
     return res;
 }
-
 class LaTeXParser {
     tex(ctx, s) {
         let markdownText = '', matched;
@@ -296,6 +279,5 @@ class LaTeXParser {
         return markdownText;
     }
 }
-
 exports.LaTeXParser = LaTeXParser;
 LaTeXParser.cmdNameRegex = /\\([a-zA-Z_]\w*)/;

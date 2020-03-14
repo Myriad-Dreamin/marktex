@@ -37,7 +37,7 @@ export class LaTeXInvalidCommandError extends LaTeXError {
 
 
 export type commandFunc = (
-    ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void) => string;
+    ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string) => string;
 
 export interface TexContext {
     // predefined commands
@@ -163,7 +163,7 @@ export const texCommands: { [commandName: string]: commandFunc } = {
             return '';
         }
         let optionVars = vars.slice(1, vars.length - 1), textTemplate = vars[vars.length - 1].text;
-        ctx.texCommandDefs[cmdName] = function (ctx: TexContext, args: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): any {
+        ctx.texCommandDefs[cmdName] = function (ctx: TexContext, args: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): any {
             let tracer = traceInvalidCommand(cmdName, ctx);
 
             if (args.length + optionVars.length < commandVarsCount) {
@@ -195,20 +195,20 @@ export const texCommands: { [commandName: string]: commandFunc } = {
 
         return '';
     },
-    par(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+    par(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '\\par';
         }
 
         return '<br/>' + tex(ctx, new StringStream(releaseVars(vars, 0)));
     },
-    indent(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+    indent(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '\\indent';
         }
-        return '<br/>' + tex(ctx, new StringStream(releaseVars(vars, 0)));
+        return /*'<br/>' + */ tex(ctx, new StringStream(releaseVars(vars, 0)));
     },
-    url(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+    url(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '';
         }
@@ -218,7 +218,7 @@ export const texCommands: { [commandName: string]: commandFunc } = {
         return '<a href="' + vars[0].text + '">' + vars[0].text + '</a>' +
             tex(ctx, new StringStream(releaseVars(vars, 1)));
     },
-    section(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+    section(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '';
         }
@@ -228,7 +228,7 @@ export const texCommands: { [commandName: string]: commandFunc } = {
         return '<h1>' + tex(ctx, new StringStream(vars[0].text)) + '</h1>' +
             tex(ctx, new StringStream(releaseVars(vars, 1)));
     },
-    subsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+    subsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '';
         }
@@ -238,7 +238,7 @@ export const texCommands: { [commandName: string]: commandFunc } = {
         return '<h3>' + tex(ctx, new StringStream(vars[0].text)) + '</h3>' +
             tex(ctx, new StringStream(releaseVars(vars, 1)));
     },
-    subsubsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+    subsubsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '';
         }
@@ -248,7 +248,7 @@ export const texCommands: { [commandName: string]: commandFunc } = {
         return '<h5>' + tex(ctx, new StringStream(vars[0].text)) + '</h5>' +
             tex(ctx, new StringStream(releaseVars(vars, 1)));
     },
-    subsubsubsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => void): string {
+    subsubsubsection(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '';
         }

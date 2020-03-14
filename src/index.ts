@@ -1,10 +1,12 @@
 import {Parser, ParserOptions} from "./parser";
 import {Renderer, RenderOptions} from "./renderer";
+import {StringStream} from "./source";
+import {newBlockRules, newInlineRules, newRules} from "./rules";
 
 
 interface Options {
     parserOptions?: ParserOptions;
-    renderOptions?: RenderOptions;
+    rendererOptions?: RenderOptions;
 }
 
 // noinspection JSUnusedGlobalSymbols
@@ -13,10 +15,15 @@ const myriad = {
     Parser(options?: Options): Parser {
         return new Parser(options?.parserOptions);
     },
-
     Renderer(options?: Options): Renderer {
-        return new Renderer(myriad.Parser(options), options?.renderOptions);
+        return new Renderer(myriad.Parser(options), options?.rendererOptions);
     },
+    StringStream(str: string): StringStream {
+        return new StringStream(str);
+    },
+    newInlineRules,
+    newBlockRules,
+    newRules,
 };
 
 

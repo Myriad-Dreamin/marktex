@@ -403,27 +403,21 @@ class Emphasis {
         this.level = level;
     }
 }
-
 exports.Emphasis = Emphasis;
-
 class InlineCode {
     constructor(content) {
         this.token_type = TokenType.InlineCode;
         this.content = content;
     }
 }
-
 exports.InlineCode = InlineCode;
-
 class LateXBlock {
     constructor(content) {
         this.token_type = TokenType.LatexBlock;
         this.content = content;
     }
 }
-
 exports.LateXBlock = LateXBlock;
-
 class MathBlock {
     constructor(content, inline) {
         this.token_type = TokenType.MathBlock;
@@ -431,5 +425,4 @@ class MathBlock {
         this.inline = inline;
     }
 }
-
 exports.MathBlock = MathBlock;
