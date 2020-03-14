@@ -94,19 +94,7 @@ export class Renderer {
 
     // noinspection JSUnusedGlobalSymbols
     public renderString(s: string): string {
-        let stackIndex: number = 0;
-        let ctx: RenderContext = {
-            render: this, tokens: this.parser.parseBlockElements(new StringStream(s)), linkDefs: {}, html: '', texCtx: {
-                texCommands: this.texCommands,
-                texCommandDefs: {},
-            }, next() {
-                for (; stackIndex < ctx.render.stack.length;) {
-                    ctx.render.stack[stackIndex++](ctx);
-                }
-            }
-        };
-        ctx.next();
-        return ctx.html;
+        return this.render(new StringStream(s));
     }
 
     public renderElements(ctx: RenderContext, elements: Token[]) {
