@@ -701,6 +701,12 @@ export interface CreateRuleOptions extends CreateInlineRuleOptions, CreateBlockR
 
 }
 
+export function newRules(opts?: CreateRuleOptions) {
+    return {
+        inlineRules: newInlineRules(opts),
+        blockRules: newBlockRules(opts),
+    }
+}
 
 export {Rule, RuleContext, validTags, inlineRules, blockRules};
 

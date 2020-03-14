@@ -1,7 +1,7 @@
 import {Parser, ParserOptions} from "./parser";
 import {Renderer, RenderOptions} from "./renderer";
 import {StringStream} from "./source";
-import {newBlockRules, newInlineRules, Rule} from "./rules";
+import {newBlockRules, newInlineRules, newRules} from "./rules";
 
 
 interface Options {
@@ -23,6 +23,7 @@ const myriad = {
     },
     newInlineRules,
     newBlockRules,
+    newRules,
 };
 
 

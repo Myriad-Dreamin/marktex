@@ -1,11 +1,12 @@
 import Benchmark = require("benchmark");
-import {createContext} from "./test_util";
 import {cn_book_md, math_md} from "./data.test";
 import {StringStream} from "./source";
+import {Parser} from "./parser";
+import {newRules} from "./rules";
 
 let suite = new Benchmark.Suite;
 
-let ctx = createContext();
+let ctx = new Parser(newRules({enableLaTeX: true}));
 
 
 // parse math_md x 132,472 ops/sec ±0.59% (94 runs sampled)
