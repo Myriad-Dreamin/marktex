@@ -31,3 +31,7 @@ class StringStream {
 }
 
 export {StringStream};
+
+export function forwardRegexp(s: StringStream, capturing: RegExpExecArray) {
+    s.forward(capturing[0].length)
+}

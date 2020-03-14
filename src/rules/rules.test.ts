@@ -1,20 +1,4 @@
 import {
-    CodeBlockRule,
-    EmphasisRule,
-    GFMFencedCodeBlockRule,
-    HeaderBlockRule,
-    HorizontalRule,
-    HTMLBlockRule,
-    InlineCodeRule,
-    InlinePlainExceptSpecialMarksRule,
-    InlinePlainRule,
-    LinkDefinitionRule,
-    LinkOrImageRule,
-    ListBlockRule,
-    ParagraphRule,
-    QuotesRule
-} from "./rules";
-import {
     CodeBlock,
     Emphasis,
     HeaderBlock,
@@ -30,8 +14,23 @@ import {
     NewLine,
     Paragraph,
     Quotes
-} from "./token";
-import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "./test_util";
+} from "../token";
+import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../test_util";
+import {
+    CodeBlockRule,
+    EmphasisRule,
+    HeaderBlockRule,
+    HorizontalRule,
+    InlineCodeRule,
+    InlinePlainExceptSpecialMarksRule,
+    InlinePlainRule,
+    LinkDefinitionRule,
+    LinkOrImageRule,
+    ListBlockRule,
+    QuotesRule
+} from "./std";
+import {ParagraphRule} from "./paragraph";
+import {GFMFencedCodeBlockRule} from "./gfm";
 
 
 describe('link/image regex', () => {
@@ -353,7 +352,7 @@ describe("LinkDefinitionRule", () => {
 });
 
 describe("ParagraphRule", () => {
-    let rule: ParagraphRule = new ParagraphRule(true);
+    let rule: ParagraphRule = new ParagraphRule({skipLaTeXBlock: true, skipMathBlock: true});
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({

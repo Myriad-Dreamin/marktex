@@ -1,5 +1,5 @@
-import {ListBlockRule} from "./rules";
-import {onRun} from "./test_util";
+import {onRun} from "../test_util";
+import {ListBlockRule} from "./std";
 
 onRun(new ListBlockRule(), function (runner) {
 
