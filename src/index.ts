@@ -6,7 +6,7 @@ import {newBlockRules, newInlineRules, newRules} from "./rules";
 
 interface Options {
     parserOptions?: ParserOptions;
-    renderOptions?: RenderOptions;
+    rendererOptions?: RenderOptions;
 }
 
 // noinspection JSUnusedGlobalSymbols
@@ -16,9 +16,9 @@ const myriad = {
         return new Parser(options?.parserOptions);
     },
     Renderer(options?: Options): Renderer {
-        return new Renderer(myriad.Parser(options), options?.renderOptions);
+        return new Renderer(myriad.Parser(options), options?.rendererOptions);
     },
-    StringStream(str: string) : StringStream {
+    StringStream(str: string): StringStream {
         return new StringStream(str);
     },
     newInlineRules,

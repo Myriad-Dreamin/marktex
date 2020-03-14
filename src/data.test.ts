@@ -67,7 +67,8 @@ export const latex_md: string = '' +
     '\\indent\n' +
     '假设:\n' +
     '\\indent\n' +
-    '定义$\\mathrm{Insert}(x,A[l...r])$为插入操作,它不破坏$A[l...r]$之间的相对关系,并将$A[l...r]$分为$A_{lo}=A[l...x-1],A[x],A_{hi}=A[x+1...r]$,满足$\\forall y\\in A_{lo}, y<A[x], \\forall y\\in A_{hi}, A[x] < y$,这时$A\' = [A[l...x-1], A[x],A[x+1...r]]$为有序的.\\subsection{算法复杂度}\n' +
+    '定义$\\mathrm{Insert}(x,A[l...r])$为插入操作,它不破坏$A[l...r]$之间的相对关系,并将$A[l...r]$分为$A_{lo}=A[l...x-1],A[x],A_{hi}=A[x+1...r]$,满足$\\forall y\\in A_{lo}, y<A[x], \\forall y\\in A_{hi}, A[x] < y$,这时$A\' = [A[l...x-1], A[x],A[x+1...r]]$为有序的.\n' +
+    '\\subsection{算法复杂度}\n' +
     '该排序为原地排序.\n' +
     '\\indent\n' +
     '当我们朴素地按照定义实现$\\mathrm{Insert}$时.它的复杂度是$\\Omega(1),\\gro(n)$的,那么:\n' +
