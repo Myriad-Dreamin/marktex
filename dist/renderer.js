@@ -42,19 +42,7 @@ class Renderer {
     }
     // noinspection JSUnusedGlobalSymbols
     renderString(s) {
-        let stackIndex = 0;
-        let ctx = {
-            render: this, tokens: this.parser.parseBlockElements(new source_1.StringStream(s)), linkDefs: {}, html: '', texCtx: {
-                texCommands: this.texCommands,
-                texCommandDefs: {},
-            }, next() {
-                for (; stackIndex < ctx.render.stack.length;) {
-                    ctx.render.stack[stackIndex++](ctx);
-                }
-            }
-        };
-        ctx.next();
-        return ctx.html;
+        return this.render(new source_1.StringStream(s));
     }
     renderElements(ctx, elements) {
         for (let el of elements) {

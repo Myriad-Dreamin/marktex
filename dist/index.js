@@ -11,12 +11,13 @@ const myriad = {
         return new parser_1.Parser(options === null || options === void 0 ? void 0 : options.parserOptions);
     },
     Renderer(options) {
-        return new renderer_1.Renderer(myriad.Parser(options), options === null || options === void 0 ? void 0 : options.renderOptions);
+        return new renderer_1.Renderer(myriad.Parser(options), options === null || options === void 0 ? void 0 : options.rendererOptions);
     },
     StringStream(str) {
         return new source_1.StringStream(str);
     },
     newInlineRules: rules_1.newInlineRules,
     newBlockRules: rules_1.newBlockRules,
+    newRules: rules_1.newRules,
 };
 exports.myriad = myriad;

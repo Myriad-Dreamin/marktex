@@ -167,7 +167,7 @@ exports.texCommands = {
         if (ctx.underMathEnv) {
             return '\\indent';
         }
-        return '<br/>' + tex(ctx, new source_1.StringStream(releaseVars(vars, 0)));
+        return /*'<br/>' + */ tex(ctx, new source_1.StringStream(releaseVars(vars, 0)));
     },
     url(ctx, vars, tex) {
         if (ctx.underMathEnv) {

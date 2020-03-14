@@ -77,19 +77,56 @@ class NewLineRule {
     }
     ;
 }
+exports.NewLineRule = NewLineRule;
 class ParagraphRule {
-    constructor() {
+    constructor(skipLaTeXBlock) {
         this.name = "Paragraph";
         this.description = "Standard Markdown Block Rule";
-        this.regex = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
+        this.skipLaTeXBlock = skipLaTeXBlock;
     }
+
     match(s, ctx) {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
+        let lastChar = 'a', i = 0;
+        if (s.source[0] == '\n') {
             return undefined;
         }
-        forward(s, capturing);
-        return new token_1.Paragraph(ctx.parseInlineElements(new source_1.StringStream(capturing[0])));
+        if (this.skipLaTeXBlock) {
+            for (; i < s.source.length; i++) {
+                if (lastChar === s.source[i] && (lastChar === '$' || lastChar === '\n')) {
+                    i--;
+                    break;
+                }
+                if (lastChar === '\n' && s.source[i] === '\\') {
+                    if (i + 1 < s.source.length &&
+                        (('a' <= s.source[i + 1] && s.source[i + 1] <= 'z') || ('A' <= s.source[i + 1] && s.source[i + 1] <= 'Z'))) {
+                        i--;
+                        break;
+                    }
+                } else if (lastChar === '\\' && s.source[i] !== '\n') {
+                    lastChar = 'a';
+                } else {
+                    lastChar = s.source[i];
+                }
+            }
+        } else {
+            for (; i < s.source.length; i++) {
+                if (lastChar === s.source[i] && '$\n'.includes(lastChar)) {
+                    i--;
+                    break;
+                }
+                if (lastChar === '\\' && s.source[i] !== '\n') {
+                    lastChar = 'a';
+                } else {
+                    lastChar = s.source[i];
+                }
+            }
+        }
+        if (!i) {
+            return undefined;
+        }
+        let capturing = s.source.slice(0, i);
+        s.forward(i);
+        return new token_1.Paragraph(ctx.parseInlineElements(new source_1.StringStream(capturing)));
     }
     ;
 }
@@ -368,6 +405,8 @@ class LatexBlockRule {
         return res;
     }
 }
+
+exports.LatexBlockRule = LatexBlockRule;
 LatexBlockRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
 class InlinePlainExceptSpecialMarksRule {
     constructor() {
@@ -436,6 +475,8 @@ class MathBlockRule {
     }
     ;
 }
+
+exports.MathBlockRule = MathBlockRule;
 class LinkOrImageRule {
     constructor() {
         this.name = "Link";
@@ -535,13 +576,13 @@ class GFMFencedCodeBlockRule {
     }
     ;
 }
+
 exports.GFMFencedCodeBlockRule = GFMFencedCodeBlockRule;
 GFMFencedCodeBlockRule.backtickRegex = /^(`{3,}) *([^`\s]+)?[^`\n]*(?:\n|$)([\s\S]*?)(?:\1`*|$)/;
 GFMFencedCodeBlockRule.tildeRegex = /^(~{3,}) *([^~\s]+)?.*(?:\n|$)([\s\S]*?)(?:\1~*|$)/;
-const inlineRules = newInlineRules();
-exports.inlineRules = inlineRules;
-const blockRules = newBlockRules();
-exports.blockRules = blockRules;
+exports.inlineRules = newInlineRules();
+exports.blockRules = newBlockRules();
+
 // noinspection JSUnusedGlobalSymbols
 function newBlockRules(opts) {
     let rules0 = [
@@ -558,7 +599,7 @@ function newBlockRules(opts) {
         new ListBlockRule(),
     ];
     let rules2 = [
-        new ParagraphRule(),
+        new ParagraphRule((opts === null || opts === void 0 ? void 0 : opts.enableLaTeX) || false),
     ];
     // default enable
     if ((opts === null || opts === void 0 ? void 0 : opts.enableGFMRules) !== false) {
@@ -588,4 +629,14 @@ function newInlineRules(opts) {
     }
     return [...rules0, ...rules1];
 }
+
 exports.newInlineRules = newInlineRules;
+
+function newRules(opts) {
+    return {
+        inlineRules: newInlineRules(opts),
+        blockRules: newBlockRules(opts),
+    };
+}
+
+exports.newRules = newRules;
