@@ -59,7 +59,7 @@ export interface HTMLTagsRegexps {
 }
 
 
-interface RuleContext {
+export interface RuleContext {
 
     parseBlockElement(source: StringStream): BlockElement
 
@@ -70,7 +70,7 @@ interface RuleContext {
     parseInlineElements(source: StringStream): InlineElement[]
 }
 
-interface Rule {
+export interface Rule {
     readonly name?: string
     readonly description?: string
 
@@ -126,7 +126,7 @@ const validTags: HTMLTagsRegexps = function (): HTMLTagsRegexps {
     };
 }();
 
-class NewLineRule implements Rule {
+export class NewLineRule implements Rule {
     readonly name: string = "NewLine";
     readonly description: string = "Standard Markdown Block Rule";
 
@@ -143,20 +143,61 @@ class NewLineRule implements Rule {
     };
 }
 
-class ParagraphRule implements Rule {
+export class ParagraphRule implements Rule {
     readonly name: string = "Paragraph";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
+    // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
+
+    protected readonly skipLaTeXBlock: boolean;
+
+    constructor(skipLaTeXBlock: boolean) {
+        this.skipLaTeXBlock = skipLaTeXBlock;
+    }
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
+        let lastChar: string = 'a', i = 0;
+        if (s.source[0] == '\n') {
             return undefined;
         }
-
-        forward(s, capturing);
-        return new Paragraph(ctx.parseInlineElements(new StringStream(capturing[0])));
+        if (this.skipLaTeXBlock) {
+            for (; i < s.source.length; i++) {
+                if (lastChar === s.source[i] && (lastChar === '$' || lastChar === '\n')) {
+                    i--;
+                    break;
+                }
+                if (lastChar === '\n' && s.source[i] === '\\') {
+                    if (i + 1 < s.source.length &&
+                        (('a' <= s.source[i + 1] && s.source[i + 1] <= 'z') || ('A' <= s.source[i + 1] && s.source[i + 1] <= 'Z'))
+                    ) {
+                        i--;
+                        break;
+                    }
+                } else if (lastChar === '\\' && s.source[i] !== '\n') {
+                    lastChar = 'a';
+                } else {
+                    lastChar = s.source[i];
+                }
+            }
+        } else {
+            for (; i < s.source.length; i++) {
+                if (lastChar === s.source[i] && '$\n'.includes(lastChar)) {
+                    i--;
+                    break;
+                }
+                if (lastChar === '\\' && s.source[i] !== '\n') {
+                    lastChar = 'a';
+                } else {
+                    lastChar = s.source[i];
+                }
+            }
+        }
+        if (!i) {
+            return undefined;
+        }
+        let capturing = s.source.slice(0, i);
+        s.forward(i);
+        return new Paragraph(ctx.parseInlineElements(new StringStream(capturing)));
     };
 }
 
@@ -164,7 +205,7 @@ class ParagraphRule implements Rule {
 /* *+- */
 
 /* 1.   */
-class ListBlockRule implements Rule {
+export class ListBlockRule implements Rule {
     readonly name: string = "ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
     public static readonly blankRegex = /^[\t\v\f ]*\n/;
@@ -225,7 +266,7 @@ class ListBlockRule implements Rule {
 }
 
 
-class QuotesRule implements Rule {
+export class QuotesRule implements Rule {
     readonly name: string = "Quotes";
     readonly description: string = "Standard Markdown Block Rule";
 
@@ -244,7 +285,7 @@ class QuotesRule implements Rule {
     };
 }
 
-class HorizontalRule implements Rule {
+export class HorizontalRule implements Rule {
     readonly name: string = "Horizontal";
     readonly description: string = "Standard Markdown Block Rule";
 
@@ -262,7 +303,7 @@ class HorizontalRule implements Rule {
 }
 
 
-class CodeBlockRule implements Rule {
+export class CodeBlockRule implements Rule {
     readonly name: string = "CodeBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
@@ -279,7 +320,7 @@ class CodeBlockRule implements Rule {
     };
 }
 
-class HeaderBlockRule implements Rule {
+export class HeaderBlockRule implements Rule {
     readonly name: string = "HeaderBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
@@ -309,7 +350,7 @@ class HeaderBlockRule implements Rule {
     }
 }
 
-class LinkDefinitionRule implements Rule {
+export class LinkDefinitionRule implements Rule {
     readonly name: string = "LinkDefinition";
     readonly description: string = "Standard Markdown Block Rule";
     public readonly regex: RegExp = /^ *\[([^\]]+)]: *<?([^\s>]+)>?(?: +["'(]([^\n]*)["')])? *(?:\n|$)/;
@@ -324,7 +365,7 @@ class LinkDefinitionRule implements Rule {
     };
 }
 
-class HTMLBlockRule implements Rule {
+export class HTMLBlockRule implements Rule {
     readonly name: string = "HTMLBlock";
     readonly description: string = "Standard Markdown Block Rule";
     private validTags: HTMLTagsRegexps;
@@ -374,7 +415,7 @@ function _braceMatch(s: StringStream, l: string, r: string): string {
     return '';
 }
 
-class InlineLatexCommandRule implements Rule {
+export class InlineLatexCommandRule implements Rule {
     readonly name: string = "InlineLatexCommand";
     readonly description: string = "Latex Inline Rule";
 
@@ -409,7 +450,7 @@ class InlineLatexCommandRule implements Rule {
     }
 }
 
-class LatexBlockRule implements Rule {
+export class LatexBlockRule implements Rule {
     readonly name: string = "LatexBlock";
     readonly description: string = "Latex Inline Rule";
 
@@ -451,7 +492,7 @@ class LatexBlockRule implements Rule {
     }
 }
 
-class InlinePlainExceptSpecialMarksRule implements Rule {
+export class InlinePlainExceptSpecialMarksRule implements Rule {
     readonly name: string = "InlinePlainExceptSpecialMarks";
     readonly description: string = "Standard Markdown Inline Rule";
 
@@ -468,7 +509,7 @@ class InlinePlainExceptSpecialMarksRule implements Rule {
     };
 }
 
-class InlinePlainRule implements Rule {
+export class InlinePlainRule implements Rule {
     readonly name: string = "InlinePlain";
     readonly description: string = "Standard Markdown Inline Rule";
 
@@ -485,7 +526,7 @@ class InlinePlainRule implements Rule {
     };
 }
 
-class InlineMathRule implements Rule {
+export class InlineMathRule implements Rule {
     readonly name: string = "InlineMath";
     readonly description: string = "Markdown Inline Rule";
 
@@ -502,7 +543,7 @@ class InlineMathRule implements Rule {
     };
 }
 
-class MathBlockRule implements Rule {
+export class MathBlockRule implements Rule {
     readonly name: string = "MathBlock";
     readonly description: string = "Markdown Block Rule";
 
@@ -520,7 +561,7 @@ class MathBlockRule implements Rule {
 }
 
 
-class LinkOrImageRule implements Rule {
+export class LinkOrImageRule implements Rule {
     readonly name: string = "Link";
     readonly description: string = "Standard Markdown Inline Rule";
 
@@ -560,7 +601,7 @@ class LinkOrImageRule implements Rule {
 }
 
 
-class EmphasisRule implements Rule {
+export class EmphasisRule implements Rule {
     readonly name: string = "Emphasis";
     readonly description: string = "Standard Markdown Inline Rule";
 
@@ -587,7 +628,7 @@ class EmphasisRule implements Rule {
 }
 
 
-class InlineCodeRule implements Rule {
+export class InlineCodeRule implements Rule {
     readonly name: string = "InlineCode";
     readonly description: string = "Standard Markdown Inline Rule";
 
@@ -605,7 +646,7 @@ class InlineCodeRule implements Rule {
 }
 
 
-class GFMFencedCodeBlockRule implements Rule {
+export class GFMFencedCodeBlockRule implements Rule {
     readonly name: string = "GFMCodeBlock";
     readonly description: string = "GFM Markdown Block Rule";
 
@@ -626,12 +667,12 @@ class GFMFencedCodeBlockRule implements Rule {
     };
 }
 
-const inlineRules: Rule[] = newInlineRules();
-
-const blockRules: Rule[] = newBlockRules();
+export const inlineRules: Rule[] = newInlineRules();
+export const blockRules: Rule[] = newBlockRules();
 
 export interface CreateBlockRuleOptions {
     enableHtml?: boolean;
+    enableLaTeX?: boolean;
     enableGFMRules?: boolean;
     validTags?: HTMLTagsRegexps;
 }
@@ -655,7 +696,7 @@ export function newBlockRules(
     ];
 
     let rules2: Rule[] = [
-        new ParagraphRule(),
+        new ParagraphRule(opts?.enableLaTeX || false),
     ];
 
     // default enable
@@ -708,20 +749,5 @@ export function newRules(opts?: CreateRuleOptions) {
     }
 }
 
-export {Rule, RuleContext, validTags, inlineRules, blockRules};
 
-export {
-    InlinePlainExceptSpecialMarksRule, LinkOrImageRule, InlineLatexCommandRule,
-    InlineMathRule, EmphasisRule, InlineCodeRule, InlinePlainRule,
-};
-export {
-    CodeBlockRule,
-    GFMFencedCodeBlockRule,
-    ParagraphRule,
-    LinkDefinitionRule,
-    QuotesRule,
-    HTMLBlockRule,
-    ListBlockRule,
-    HorizontalRule,
-    HeaderBlockRule,
-};
+export {validTags};
