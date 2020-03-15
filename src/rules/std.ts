@@ -42,7 +42,7 @@ export class NewLineRule implements Rule {
     readonly name: string = "Standard/Block/NewLine";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^\s+/;
+    public readonly regex: RegExp = /^\n+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -67,9 +67,16 @@ export class ParagraphRule implements Rule {
             return undefined;
         }
         for (; i < s.source.length; i++) {
-            if (lastChar === s.source[i] && (lastChar === '\n')) {
-                i--;
-                break;
+            // noinspection DuplicatedCode
+            if (lastChar === '\n') {
+                if (('\n' === s.source[i]) ||
+                    // ('\t' === s.source[i]) || (s.source[i] === ' ' &&
+                    // i + 3 < s.source.length && s.source[i + 1] === ' ' &&
+                    // s.source[i + 2] === ' ' && s.source[i + 3] === ' ') ||
+                    ('*+-'.includes(s.source[i]) && (i + 1 < s.source.length && s.source[i + 1] === ' '))) {
+                    i--;
+                    break;
+                }
             }
             if (lastChar === '\\' && s.source[i] !== '\n') {
                 lastChar = 'a';
@@ -188,7 +195,7 @@ export class ListBlockRule implements Rule {
     readonly name: string = "Standard/Block/ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
     public static readonly blankRegex = /^[\t\v\f ]*\n/;
-    public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
+    public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:\n(?: {4}|\t))?(?:(?=[^0-9*+-])[^\n]+(?:\n|$)(?:\n(?: {4}|\t))?)*)/;
     public static readonly replaceRegex = /^(?: {4}|\t)/gm;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
@@ -346,10 +353,12 @@ export class LinkOrImageRule implements Rule {
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
-    public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\s*\[([^\]]*)]/;
+    public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\[([^\]]*)]/;
+    public readonly autoLinkRegex: RegExp =
+        /^<(?:(?:mailto|MAILTO):([\w.!#$%&'*+\/=?^`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)|([a-zA-Z][a-zA-Z\d+.-]{1,31}:[^<>\s]*))>/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        return this.matchInline(s, ctx) || this.matchRef(s, ctx);
+        return this.matchInline(s, ctx) || this.matchAutoLink(s, ctx) || this.matchRef(s, ctx);
     };
 
     matchInline(s: StringStream, _: RuleContext): MaybeToken {
@@ -363,6 +372,19 @@ export class LinkOrImageRule implements Rule {
             return new ImageLink(capturing[2], capturing[3], true, capturing[4]);
         } else {
             return new Link(capturing[2], capturing[3], true, capturing[4]);
+        }
+    }
+
+    matchAutoLink(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = this.autoLinkRegex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+        forwardRegexp(s, capturing);
+        if (capturing[1] !== undefined) {
+            return new Link(capturing[1], 'mailto:' + capturing[1], true);
+        } else {
+            return new Link(capturing[2], capturing[2], true);
         }
     }
 

@@ -1,9 +1,13 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const __1 = require("..");
 const token_1 = require("../token/token");
 const tex_parser_1 = require("../parser/tex-parser");
-
+function escape(s) {
+    return s.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
 class Renderer {
     constructor(parser, opts) {
         this.parser = parser;
@@ -161,7 +165,7 @@ class Renderer {
         }
         ctx.html += '<pre><code' +
             (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
-            (el).body + '</pre></code>';
+            escape((el).body) + '</code></pre>';
     }
     renderHTMLBlock(ctx, el) {
         ctx.html += (el).body;
@@ -225,7 +229,7 @@ class Renderer {
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
     renderInlineCode(ctx, el) {
-        ctx.html += '<code>' + el.content + '</code>';
+        ctx.html += '<code>' + escape(el.content) + '</code>';
     }
 }
 exports.Renderer = Renderer;

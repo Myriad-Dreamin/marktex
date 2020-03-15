@@ -131,6 +131,35 @@ describe("LinkOrImageRule", () => {
         expectedElement: new Link("", "", true, undefined),
     });
     match({
+        text: "<MAILTO:afaasd@a.com>",
+        matchedLength: "<MAILTO:afaasd@a.com>".length,
+        expectedElement: new Link("afaasd@a.com", "mailto:afaasd@a.com", true, undefined),
+    });
+    match({
+        text: "<ab:>",
+        matchedLength: "<ab:>".length,
+        expectedElement: new Link("ab:", "ab:", true, undefined),
+    });
+    match({
+        text: "<http://foo.bar.baz>",
+        matchedLength: "<http://foo.bar.baz>".length,
+        expectedElement: new Link("http://foo.bar.baz", "http://foo.bar.baz", true, undefined),
+    });
+    match({
+        text: "<irc://foo.bar:2233/baz>",
+        matchedLength: "<irc://foo.bar:2233/baz>".length,
+        expectedElement: new Link("irc://foo.bar:2233/baz", "irc://foo.bar:2233/baz", true, undefined),
+    });
+    match({
+        text: "<affffffffffffffffffffff:>",
+        matchedLength: "<affffffffffffffffffffff:>".length,
+        expectedElement: new Link("affffffffffffffffffffff:", "affffffffffffffffffffff:", true, undefined),
+    });
+    notMatch({text: "<a:bad-link>"});
+    notMatch({text: "<:bad-link>"});
+    notMatch({text: "<bad-link>"});
+    notMatch({text: "<a:bad-linf>"});
+    match({
         text: "[title](refer-link)",
         matchedLength: "[title](refer-link)".length,
         expectedElement: new Link("title", "refer-link", true, undefined),

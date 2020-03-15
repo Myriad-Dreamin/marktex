@@ -1,16 +1,16 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const stream_1 = require("../lib/stream");
 const token_1 = require("../token/token");
 const fp_1 = require("../lib/fp");
-
 function _braceMatch(s, l, r) {
     if (s.source[0] == l) {
         let c = 0;
         for (let j = 0; j < s.source.length; j++) {
             if (s.source[j] == l) {
                 c++;
-            } else if (s.source[j] == r) {
+            }
+            else if (s.source[j] == r) {
                 c--;
                 if (c === 0) {
                     let res = s.source.slice(0, j + 1);
@@ -25,13 +25,11 @@ function _braceMatch(s, l, r) {
     }
     return '';
 }
-
 class InlineLatexCommandRule {
     constructor() {
         this.name = "InlineLatexCommand";
         this.description = "Latex Inline Rule";
     }
-
     match(s, _) {
         let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
         if (capturing === null) {
@@ -40,7 +38,6 @@ class InlineLatexCommandRule {
         stream_1.forwardRegexp(s, capturing);
         return new token_1.InlinePlain(capturing[0] + this.braceMatch(s));
     }
-
     braceMatch(s) {
         let res = '';
         for (let i = 0; !s.eof; i = 0) {
@@ -59,16 +56,13 @@ class InlineLatexCommandRule {
         return res;
     }
 }
-
 exports.InlineLatexCommandRule = InlineLatexCommandRule;
 InlineLatexCommandRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
-
 class LatexBlockRule {
     constructor() {
         this.name = "LatexBlock";
         this.description = "Latex Inline Rule";
     }
-
     match(s, _) {
         let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
         if (capturing === null) {
@@ -77,7 +71,6 @@ class LatexBlockRule {
         stream_1.forwardRegexp(s, capturing);
         return new token_1.LateXBlock(capturing[0] + this.braceMatch(s));
     }
-
     braceMatch(s) {
         let res = '';
         for (let i = 0; !s.eof; i = 0) {
@@ -103,17 +96,14 @@ class LatexBlockRule {
         return res;
     }
 }
-
 exports.LatexBlockRule = LatexBlockRule;
 LatexBlockRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
-
 class InlineMathRule {
     constructor() {
         this.name = "InlineMath";
         this.description = "Markdown Inline Rule";
         this.regex = /^\$((?:[^$]|\\\$)+)\$/;
     }
-
     match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -124,16 +114,13 @@ class InlineMathRule {
     }
     ;
 }
-
 exports.InlineMathRule = InlineMathRule;
-
 class MathBlockRule {
     constructor() {
         this.name = "MathBlock";
         this.description = "Markdown Block Rule";
         this.regex = /^\$\$((?:[^$]|\\\$)+)\$\$/;
     }
-
     match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
@@ -144,40 +131,49 @@ class MathBlockRule {
     }
     ;
 }
-
 exports.MathBlockRule = MathBlockRule;
-
 class ParagraphRule {
     constructor(opts) {
         this.name = "Paragraph";
         this.description = "Standard Markdown Block Rule";
-        let detectors = [this.detectEndPara];
+        let detectors = [];
         if (opts && opts.skipMathBlock) {
             detectors.push(this.detectMathBlock);
         }
         if (opts && opts.skipLaTeXBlock) {
             detectors.push(this.detectLaTeXBlock);
         }
-        if (detectors.length !== 3) {
+        if (detectors.length !== 2) {
             this.detect = fp_1.maybeCompose(...detectors);
-        } else {
-            this.detect = this.detectEndPara;
+        }
+        else {
+            this.detect = this.detectMathBlock;
             this.match = this.fastMatch;
         }
     }
-
     match(s, ctx) {
-        let g = {lastChar: '\xff', s: s, i: 0};
+        let g = { lastChar: '\xff', s: s, i: 0 };
         if (s.source[0] == '\n') {
             return undefined;
         }
         for (; g.i < s.source.length; g.i++) {
+            if (g.lastChar === '\n') {
+                if (('\n' === s.source[g.i]) ||
+                    // ('\t' === s.source[g.i]) || (s.source[g.i] === ' ' &&
+                    // g.i + 3 < s.source.length && s.source[g.i + 1] === ' ' &&
+                    // s.source[g.i + 2] === ' ' && s.source[g.i + 3] === ' ') ||
+                    ('*+-'.includes(s.source[g.i]) && (g.i + 1 < s.source.length && s.source[g.i + 1] === ' '))) {
+                    g.i--;
+                    break;
+                }
+            }
             if (this.detect(g) === undefined) {
                 break;
             }
             if (g.lastChar === '\\' && s.source[g.i] !== '\n') {
                 g.lastChar = 'a';
-            } else {
+            }
+            else {
                 g.lastChar = s.source[g.i];
             }
         }
@@ -188,14 +184,24 @@ class ParagraphRule {
         s.forward(g.i);
         return new token_1.Paragraph(ctx.parseInlineElements(new stream_1.StringStream(capturing)));
     }
-
     fastMatch(s, ctx) {
         let lastChar = 'a', i = 0;
         if (s.source[0] == '\n') {
             return undefined;
         }
         for (; i < s.source.length; i++) {
-            if (lastChar === s.source[i] && (lastChar === '$' || lastChar === '\n')) {
+            // noinspection DuplicatedCode
+            if (lastChar === '\n') {
+                if (('\n' === s.source[i]) ||
+                    // ('\t' === s.source[i]) || (s.source[i] === ' ' &&
+                    // i + 3 < s.source.length && s.source[i + 1] === ' ' &&
+                    // s.source[i + 2] === ' ' && s.source[i + 3] === ' ') ||
+                    ('*+-'.includes(s.source[i]) && (i + 1 < s.source.length && s.source[i + 1] === ' '))) {
+                    i--;
+                    break;
+                }
+            }
+            if (lastChar === s.source[i] && (lastChar === '$')) {
                 i--;
                 break;
             }
@@ -205,9 +211,11 @@ class ParagraphRule {
                     i--;
                     break;
                 }
-            } else if (lastChar === '\\' && s.source[i] !== '\n') {
+            }
+            else if (lastChar === '\\' && s.source[i] !== '\n') {
                 lastChar = 'a';
-            } else {
+            }
+            else {
                 lastChar = s.source[i];
             }
         }
@@ -218,15 +226,6 @@ class ParagraphRule {
         s.forward(i);
         return new token_1.Paragraph(ctx.parseInlineElements(new stream_1.StringStream(capturing)));
     }
-
-    detectEndPara(g) {
-        if (g.lastChar === g.s.source[g.i] && g.lastChar === '\n') {
-            g.i--;
-            return undefined;
-        }
-        return g;
-    }
-
     detectMathBlock(g) {
         if (g.lastChar === g.s.source[g.i] && g.lastChar === '$') {
             g.i--;
@@ -234,7 +233,6 @@ class ParagraphRule {
         }
         return g;
     }
-
     detectLaTeXBlock(g) {
         if (g.lastChar === '\n' && g.s.source[g.i] === '\\') {
             let nextIndex = g.i + 1, nextChar = g.s.source[nextIndex];
@@ -247,5 +245,4 @@ class ParagraphRule {
         return g;
     }
 }
-
 exports.ParagraphRule = ParagraphRule;

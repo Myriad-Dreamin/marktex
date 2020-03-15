@@ -145,7 +145,7 @@ export class ParagraphRule implements Rule {
     protected readonly detect: MaybeF<{ lastChar: string, s: StringStream, i: number }>;
 
     constructor(opts?: { skipLaTeXBlock: boolean, skipMathBlock: boolean }) {
-        let detectors = [this.detectEndPara];
+        let detectors = [];
         if (opts && opts.skipMathBlock) {
             detectors.push(this.detectMathBlock);
         }
@@ -153,10 +153,10 @@ export class ParagraphRule implements Rule {
             detectors.push(this.detectLaTeXBlock);
         }
 
-        if (detectors.length !== 3) {
+        if (detectors.length !== 2) {
             this.detect = maybeCompose(...detectors);
         } else {
-            this.detect = this.detectEndPara;
+            this.detect = this.detectMathBlock;
             this.match = this.fastMatch;
         }
     }
@@ -167,6 +167,17 @@ export class ParagraphRule implements Rule {
             return undefined;
         }
         for (; g.i < s.source.length; g.i++) {
+            if (g.lastChar === '\n') {
+                if (('\n' === s.source[g.i]) ||
+                    // ('\t' === s.source[g.i]) || (s.source[g.i] === ' ' &&
+                    // g.i + 3 < s.source.length && s.source[g.i + 1] === ' ' &&
+                    // s.source[g.i + 2] === ' ' && s.source[g.i + 3] === ' ') ||
+                    ('*+-'.includes(s.source[g.i]) && (g.i + 1 < s.source.length && s.source[g.i + 1] === ' '))) {
+                    g.i--;
+                    break;
+                }
+            }
+
             if (this.detect(g) === undefined) {
                 break;
             }
@@ -190,7 +201,18 @@ export class ParagraphRule implements Rule {
             return undefined;
         }
         for (; i < s.source.length; i++) {
-            if (lastChar === s.source[i] && (lastChar === '$' || lastChar === '\n')) {
+            // noinspection DuplicatedCode
+            if (lastChar === '\n') {
+                if (('\n' === s.source[i]) ||
+                    // ('\t' === s.source[i]) || (s.source[i] === ' ' &&
+                    // i + 3 < s.source.length && s.source[i + 1] === ' ' &&
+                    // s.source[i + 2] === ' ' && s.source[i + 3] === ' ') ||
+                    ('*+-'.includes(s.source[i]) && (i + 1 < s.source.length && s.source[i + 1] === ' '))) {
+                    i--;
+                    break;
+                }
+            }
+            if (lastChar === s.source[i] && (lastChar === '$')) {
                 i--;
                 break;
             }
@@ -213,14 +235,6 @@ export class ParagraphRule implements Rule {
         let capturing = s.source.slice(0, i);
         s.forward(i);
         return new Paragraph(ctx.parseInlineElements(new StringStream(capturing)));
-    }
-
-    protected detectEndPara(g: { lastChar: string, s: StringStream, i: number }) {
-        if (g.lastChar === g.s.source[g.i] && g.lastChar === '\n') {
-            g.i--;
-            return undefined;
-        }
-        return g;
     }
 
     protected detectMathBlock(g: { lastChar: string, s: StringStream, i: number }) {
