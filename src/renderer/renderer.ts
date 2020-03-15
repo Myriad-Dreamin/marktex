@@ -42,6 +42,12 @@ export interface RenderOptions {
     enableLaTeX?: boolean,
 }
 
+function escape(s: string) {
+    return s.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 export class Renderer {
     protected parser: Parser;
     private stack: RenderMiddleware[];
@@ -224,7 +230,7 @@ export class Renderer {
 
         ctx.html += '<pre><code' +
             (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
-            (<CodeBlock>(el)).body + '</pre></code>';
+            escape((<CodeBlock>(el)).body) + '</code></pre>';
     }
 
     protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {
@@ -302,7 +308,7 @@ export class Renderer {
     }
 
     protected renderInlineCode(ctx: RenderContext, el: BlockElement) {
-        ctx.html += '<code>' + (<InlineCode>el).content + '</code>';
+        ctx.html += '<code>' + escape((<InlineCode>el).content) + '</code>';
     }
 }
 
