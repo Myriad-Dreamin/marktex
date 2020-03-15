@@ -42,7 +42,7 @@ export class NewLineRule implements Rule {
     readonly name: string = "Standard/Block/NewLine";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly regex: RegExp = /^\s+/;
+    public readonly regex: RegExp = /^\n+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -346,7 +346,7 @@ export class LinkOrImageRule implements Rule {
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
-    public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\s*\[([^\]]*)]/;
+    public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\[([^\]]*)]/;
     public readonly autoLinkRegex: RegExp =
         /^<(?:(?:mailto|MAILTO):([\w.!#$%&'*+\/=?^`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)|([a-zA-Z][a-zA-Z\d+.-]{1,31}:[^<>\s]*))>/;
 
