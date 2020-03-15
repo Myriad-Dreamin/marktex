@@ -1,5 +1,4 @@
 import {Rule, RuleContext} from "./rules/rule";
-import {ParagraphRule} from './rules/paragraph';
 import {
     CodeBlockRule,
     EmphasisRule,
@@ -18,7 +17,7 @@ import {
     QuotesRule,
     RegExpWithTagName
 } from "./rules/std";
-import {InlineLatexCommandRule, InlineMathRule, LatexBlockRule, MathBlockRule} from "./rules/latex";
+import {InlineLatexCommandRule, InlineMathRule, LatexBlockRule, MathBlockRule, ParagraphRule} from "./rules/latex";
 import {GFMFencedCodeBlockRule} from "./rules/gfm";
 
 export {RuleContext, Rule};

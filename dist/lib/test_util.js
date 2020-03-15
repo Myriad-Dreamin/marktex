@@ -1,17 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", {value: true});
 const stream_1 = require("./stream");
-const parser_1 = require("../parser/parser");
+const __1 = require("..");
 const chai = require("chai");
 const Benchmark = require("benchmark");
 exports.expect = chai.expect;
-
 function createContext() {
-    return new parser_1.Parser();
+    return new __1.Parser();
 }
-
 exports.createContext = createContext;
-
 function itWillMatchElement(rule, ctx = createContext()) {
     return ({title, text, matchedLength, expectedElement}) => {
         it(title ? title : ('will match ' + text), () => {

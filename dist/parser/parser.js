@@ -2,17 +2,14 @@
 Object.defineProperty(exports, "__esModule", {value: true});
 const token_1 = require("../token/token");
 const rules_1 = require("../rules");
-
 class Parser {
     constructor(options) {
         this.inlineRules = (options === null || options === void 0 ? void 0 : options.inlineRules) || rules_1.inlineRules;
         this.blockRules = (options === null || options === void 0 ? void 0 : options.blockRules) || rules_1.blockRules;
     }
-
     parseBlockElement(source) {
         return this._parse(source, this.blockRules);
     }
-
     parseInlineElement(source) {
         return this._parse(source, this.inlineRules);
     }

@@ -1,10 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", {value: true});
-const paragraph_1 = require("./rules/paragraph");
 const std_1 = require("./rules/std");
 const latex_1 = require("./rules/latex");
 const gfm_1 = require("./rules/gfm");
-
 function validTags() {
     let _validTags = undefined;
     return () => {
@@ -46,11 +44,9 @@ function validTags() {
         return _validTags;
     };
 }
-
 exports.inlineRules = newInlineRules();
 exports.blockRules = newBlockRules();
 let validTagsClosure;
-
 // noinspection JSUnusedGlobalSymbols
 function newBlockRules(opts) {
     let rules0 = [
@@ -67,7 +63,7 @@ function newBlockRules(opts) {
         new std_1.ListBlockRule(),
     ];
     let rules2 = [
-        new paragraph_1.ParagraphRule({
+        new latex_1.ParagraphRule({
             skipLaTeXBlock: (opts === null || opts === void 0 ? void 0 : opts.enableLaTeX) || false,
             skipMathBlock: true
         }),

@@ -1,13 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", {value: true});
 exports.compose = (g, f) => (i) => g(f(i));
-
 function Id(i) {
     return i;
 }
-
 exports.Id = Id;
-
 // maybeCompose = MaybeF
 function maybeCompose(...fns) {
     return (fns.length == 0) ? Id : (fns.length == 1 ? fns[0] : function (i) {
@@ -21,5 +18,4 @@ function maybeCompose(...fns) {
         return j;
     });
 }
-
 exports.maybeCompose = maybeCompose;

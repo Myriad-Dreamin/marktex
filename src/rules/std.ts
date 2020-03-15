@@ -15,6 +15,7 @@ import {
     ListElement,
     MaybeToken,
     NewLine,
+    Paragraph,
     Quotes
 } from "../token/token";
 
@@ -29,6 +30,7 @@ import {
 //     Horizontal
 //     LinkDefinition
 //     HTML
+//     Paragraph
 // Standard Inline Rules
 //     Link
 //     ImageLink
@@ -51,6 +53,37 @@ export class NewLineRule implements Rule {
         forwardRegexp(s, capturing);
         return new NewLine(capturing[0]);
     };
+}
+
+export class ParagraphRule implements Rule {
+    readonly name: string = "Paragraph";
+    readonly description: string = "Standard Markdown Block Rule";
+
+    // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
+
+    match(s: StringStream, ctx: RuleContext): MaybeToken {
+        let lastChar: string = 'a', i = 0;
+        if (s.source[0] == '\n') {
+            return undefined;
+        }
+        for (; i < s.source.length; i++) {
+            if (lastChar === s.source[i] && (lastChar === '\n')) {
+                i--;
+                break;
+            }
+            if (lastChar === '\\' && s.source[i] !== '\n') {
+                lastChar = 'a';
+            } else {
+                lastChar = s.source[i];
+            }
+        }
+        if (!i) {
+            return undefined;
+        }
+        let capturing = s.source.slice(0, i);
+        s.forward(i);
+        return new Paragraph(ctx.parseInlineElements(new StringStream(capturing)));
+    }
 }
 
 export class QuotesRule implements Rule {
