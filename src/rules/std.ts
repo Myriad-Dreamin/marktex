@@ -67,9 +67,16 @@ export class ParagraphRule implements Rule {
             return undefined;
         }
         for (; i < s.source.length; i++) {
-            if (lastChar === s.source[i] && (lastChar === '\n')) {
-                i--;
-                break;
+            // noinspection DuplicatedCode
+            if (lastChar === '\n') {
+                if (('\n' === s.source[i]) ||
+                    // ('\t' === s.source[i]) || (s.source[i] === ' ' &&
+                    // i + 3 < s.source.length && s.source[i + 1] === ' ' &&
+                    // s.source[i + 2] === ' ' && s.source[i + 3] === ' ') ||
+                    ('*+-'.includes(s.source[i]) && (i + 1 < s.source.length && s.source[i + 1] === ' '))) {
+                    i--;
+                    break;
+                }
             }
             if (lastChar === '\\' && s.source[i] !== '\n') {
                 lastChar = 'a';
@@ -188,7 +195,7 @@ export class ListBlockRule implements Rule {
     readonly name: string = "Standard/Block/ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
     public static readonly blankRegex = /^[\t\v\f ]*\n/;
-    public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
+    public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:\n(?: {4}|\t))?(?:(?=[^0-9*+-])[^\n]+(?:\n|$)(?:\n(?: {4}|\t))?)*)/;
     public static readonly replaceRegex = /^(?: {4}|\t)/gm;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
