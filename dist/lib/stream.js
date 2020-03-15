@@ -24,3 +24,7 @@ class StringStream {
     }
 }
 exports.StringStream = StringStream;
+function forwardRegexp(s, capturing) {
+    s.forward(capturing[0].length);
+}
+exports.forwardRegexp = forwardRegexp;

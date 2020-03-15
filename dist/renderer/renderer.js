@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", {value: true});
-const source_1 = require("./source");
-const token_1 = require("./token");
-const tex_parser_1 = require("./tex-parser");
+const __1 = require("..");
+const token_1 = require("../token/token");
+const tex_parser_1 = require("../parser/tex-parser");
+
 class Renderer {
     constructor(parser, opts) {
         this.parser = parser;
@@ -40,18 +41,15 @@ class Renderer {
         ctx.next();
         return ctx.html;
     }
-
     // noinspection JSUnusedGlobalSymbols
     renderString(s) {
-        return this.render(new source_1.StringStream(s));
+        return this.render(new __1.StringStream(s));
     }
-
     renderElements(ctx, elements) {
         for (let el of elements) {
             ctx.render.handleElement(ctx, el);
         }
     }
-
     createLinkMap(ctx) {
         for (let el of ctx.tokens) {
             if (el.token_type === token_1.TokenType.LinkDefinition) {
@@ -177,7 +175,7 @@ class Renderer {
     renderInlinePlain(ctx, el) {
         ctx.texCtx.underMathEnv = false;
         ctx.html += this.enableLaTeX ?
-            this.latexParser.tex(ctx.texCtx, new source_1.StringStream((el).content)) :
+            this.latexParser.tex(ctx.texCtx, new __1.StringStream((el).content)) :
             (el).content;
     }
     renderLink(ctx, el) {
@@ -193,7 +191,7 @@ class Renderer {
             ctx.html += ' title="' + link.title + '"';
         }
         ctx.texCtx.underMathEnv = false;
-        ctx.html += '>' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(link.linkTitle)) :
+        ctx.html += '>' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new __1.StringStream(link.linkTitle)) :
             link.linkTitle) + '</a>';
     }
     renderImageLink(ctx, el) {
@@ -211,18 +209,18 @@ class Renderer {
     renderMathBlock(ctx, el) {
         let mathBlock = el;
         ctx.texCtx.underMathEnv = true;
-        ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(mathBlock.content)) :
+        ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new __1.StringStream(mathBlock.content)) :
             mathBlock.content) + '</script>';
     }
     renderLatexBlock(ctx, el) {
         let latexBlock = el;
         ctx.texCtx.underMathEnv = false;
-        ctx.html += this.latexParser.tex(ctx.texCtx, new source_1.StringStream(latexBlock.content));
+        ctx.html += this.latexParser.tex(ctx.texCtx, new __1.StringStream(latexBlock.content));
     }
     renderEmphasis(ctx, el) {
         let emphasisEl = el;
         ctx.texCtx.underMathEnv = false;
-        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new source_1.StringStream(emphasisEl.content)) :
+        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new __1.StringStream(emphasisEl.content)) :
             emphasisEl.content) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }

@@ -1,5 +1,5 @@
 import {LaTeXParser, texCommands} from "./tex-parser";
-import {StringStream} from "./source";
+import {StringStream} from "..";
 
 
 let parser: LaTeXParser = new LaTeXParser();

@@ -1,19 +1,17 @@
 import {
     CodeBlockRule,
     EmphasisRule,
-    GFMFencedCodeBlockRule,
     HeaderBlockRule,
     HorizontalRule,
-    HTMLBlockRule,
     InlineCodeRule,
     InlinePlainExceptSpecialMarksRule,
     InlinePlainRule,
     LinkDefinitionRule,
     LinkOrImageRule,
     ListBlockRule,
-    ParagraphRule,
     QuotesRule
-} from "./rules";
+} from "./std";
+import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/test_util";
 import {
     CodeBlock,
     Emphasis,
@@ -26,13 +24,10 @@ import {
     LinkDefinition,
     ListBlock,
     ListElement,
-    MathBlock,
     NewLine,
     Paragraph,
     Quotes
-} from "./token";
-import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "./test_util";
-
+} from "../token/token";
 
 describe('link/image regex', () => {
     let rule: LinkOrImageRule = new LinkOrImageRule();
@@ -71,7 +66,6 @@ describe('link/image regex', () => {
     itWillMatch({text: '![](Y "Z")', imageMark: '!', linkName: '', href: 'Y', title: 'Z'});
     itWillMatch({text: '![](Y)', imageMark: '!', linkName: '', href: 'Y'});
 });
-
 
 describe("InlinePlainExceptSpecialMarksRule", () => {
     let rule: InlinePlainExceptSpecialMarksRule = new InlinePlainExceptSpecialMarksRule();
@@ -352,84 +346,6 @@ describe("LinkDefinitionRule", () => {
     });
 });
 
-describe("ParagraphRule", () => {
-    let rule: ParagraphRule = new ParagraphRule(true);
-    let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: textAcceptor = itWillNotMatchElement(rule);
-    match({
-        text: "a",
-        matchedLength: "a".length,
-        expectedElement: new Paragraph(
-            [new InlinePlain("a")],
-        ),
-    });
-    match({
-        text: "www**b**x__qwq__*233*",
-        matchedLength: "www**b**x__qwq__*233*".length,
-        expectedElement: new Paragraph(
-            [
-                new InlinePlain("www"),
-                new Emphasis("b", 2),
-                new InlinePlain("x"),
-                new Emphasis("qwq", 2),
-                new Emphasis("233", 1),
-            ],
-        ),
-    });
-    match({
-        text: "a\n\nqwq",
-        matchedLength: "a".length,
-        expectedElement: new Paragraph(
-            [new InlinePlain("a")],
-        ),
-    });
-    match({
-        text: "a\\inlineLatexRule\n\nqwq",
-        matchedLength: "a\\inlineLatexRule".length,
-        expectedElement: new Paragraph(
-            [new InlinePlain("a\\inlineLatexRule")],
-        ),
-    });
-    match({
-        text: "a\\inlineLatexRule{}{}\n\nqwq",
-        matchedLength: "a\\inlineLatexRule{}{}".length,
-        expectedElement: new Paragraph(
-            [new InlinePlain("a\\inlineLatexRule{}{}")],
-        ),
-    });
-    match({
-        text: "a\n\\blockLatexRule\n\nqwq",
-        matchedLength: "a".length,
-        expectedElement: new Paragraph(
-            [new InlinePlain("a")],
-        ),
-    });
-    match({
-        text: '$A[1...n]=[A[1]...A[n]](n>=1)$总是表示一个数组,$len[A]=n$总是表示一个数组的长度.\n' +
-            '\\subsubsection{数组切片}\n',
-        matchedLength: '$A[1...n]=[A[1]...A[n]](n>=1)$总是表示一个数组,$len[A]=n$总是表示一个数组的长度.'.length,
-        expectedElement: new Paragraph(
-            [
-                new MathBlock("A[1...n]=[A[1]...A[n]](n>=1)", true),
-                new InlinePlain("总是表示一个数组,"),
-                new MathBlock("len[A]=n", true),
-                new InlinePlain("总是表示一个数组的长度."),
-            ],
-        ),
-    });
-
-
-    match({
-        text: "a\nqwq",
-        matchedLength: "a\nqwq".length,
-        expectedElement: new Paragraph(
-            [new InlinePlain("a\nqwq")],
-        ),
-    });
-    notMatch({text: "\n"});
-    notMatch({text: "\ntest"});
-    notMatch({text: "\n\ntest"});
-});
 
 describe("CodeBlockRule", () => {
     let rule: CodeBlockRule = new CodeBlockRule();
@@ -471,200 +387,6 @@ describe("CodeBlockRule", () => {
         expectedElement: new CodeBlock("qwq\t\n"),
     });
     notMatch({text: "\n"});
-});
-
-describe("GFMFencedCodeBlockRule", () => {
-    let rule: GFMFencedCodeBlockRule = new GFMFencedCodeBlockRule();
-    let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: textAcceptor = itWillNotMatchElement(rule);
-    match({
-        title: 'https://github.github.com/gfm/#example-89',
-        text: "```\n" +
-            "<\n" +
-            " >\n" +
-            "```",
-        matchedLength: ("```\n" +
-            "<\n" +
-            " >\n" +
-            "```").length,
-        expectedElement: new CodeBlock("<\n >\n"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-90',
-        text: "~~~\n" +
-            "<\n" +
-            " >\n" +
-            "~~~",
-        matchedLength: ("~~~\n" +
-            "<\n" +
-            " >\n" +
-            "~~~").length,
-        expectedElement: new CodeBlock("<\n >\n"),
-    });
-    notMatch({
-        title: 'https://github.github.com/gfm/#example-91',
-        text: "``\n" +
-            "foo\n" +
-            "``",
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-92',
-        text: "```\n" +
-            "aaa\n" +
-            "~~~\n" +
-            "```",
-        matchedLength: ("```\n" +
-            "aaa\n" +
-            "~~~\n" +
-            "```").length,
-        expectedElement: new CodeBlock("aaa\n~~~\n"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-93',
-        text: "~~~\n" +
-            "aaa\n" +
-            "```\n" +
-            "~~~",
-        matchedLength: ("~~~\n" +
-            "aaa\n" +
-            "~~~\n" +
-            "~~~").length,
-        expectedElement: new CodeBlock("aaa\n```\n"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-94',
-        text: "````\n" +
-            "aaa\n" +
-            "```\n" +
-            "``````",
-        matchedLength: ("````\n" +
-            "aaa\n" +
-            "```\n" +
-            "``````").length,
-        expectedElement: new CodeBlock("aaa\n```\n"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-95',
-        text: "~~~~\n" +
-            "aaa\n" +
-            "~~~\n" +
-            "~~~~",
-        matchedLength: ("~~~~\n" +
-            "aaa\n" +
-            "~~~\n" +
-            "~~~~").length,
-        expectedElement: new CodeBlock("aaa\n~~~\n"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-96',
-        text: "```\n",
-        matchedLength: ("```\n").length,
-        expectedElement: new CodeBlock(""),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-97',
-        text: "`````\n" +
-            "\n" +
-            "```\n" +
-            "aaa",
-        matchedLength: ("`````\n" +
-            "\n" +
-            "```\n" +
-            "aaa").length,
-        expectedElement: new CodeBlock("\n```\naaa"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-99',
-        text: "```\n" +
-            "\n" +
-            "  \n" +
-            "```",
-        matchedLength: ("```\n" +
-            "\n" +
-            "  \n" +
-            "```").length,
-        expectedElement: new CodeBlock("\n  \n"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-100',
-        text: "```\n" +
-            "```",
-        matchedLength: ("```\n" +
-            "```").length,
-        expectedElement: new CodeBlock(""),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-108',
-        text: "~~~~~~\n" +
-            "aaa\n" +
-            "~~~ ~~",
-        matchedLength: ("~~~~~~\n" +
-            "aaa\n" +
-            "~~~ ~~").length,
-        expectedElement: new CodeBlock("aaa\n" +
-            "~~~ ~~"),
-    });
-    notMatch({
-        title: 'https://github.github.com/gfm/#example-109',
-        text: "``` ```\n" +
-            "aaa",
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-112',
-        text: "```ruby\n" +
-            "def foo(x)\n" +
-            "  return 3\n" +
-            "end\n" +
-            "```",
-        matchedLength: ("```ruby\n" +
-            "def foo(x)\n" +
-            "  return 3\n" +
-            "end\n" +
-            "```").length,
-        expectedElement: new CodeBlock("def foo(x)\n" +
-            "  return 3\n" +
-            "end\n", "ruby"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-113',
-        text: "~~~~    ruby startline=3 $%@#$\n" +
-            "def foo(x)\n" +
-            "  return 3\n" +
-            "end\n" +
-            "~~~~~~~",
-        matchedLength: ("~~~~    ruby startline=3 $%@#$\n" +
-            "def foo(x)\n" +
-            "  return 3\n" +
-            "end\n" +
-            "~~~~~~~").length,
-        expectedElement: new CodeBlock("def foo(x)\n" +
-            "  return 3\n" +
-            "end\n", "ruby"),
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-114',
-        text: "````;\n" +
-            "````",
-        matchedLength: ("````;\n" +
-            "````").length,
-        expectedElement: new CodeBlock("", ";"),
-    });
-    notMatch({
-        title: 'https://github.github.com/gfm/#example-115',
-        text: "``` aa ```\n" +
-            "foo",
-    });
-    match({
-        title: 'https://github.github.com/gfm/#example-116',
-        text: "~~~ aa ``` ~~~\n" +
-            "foo\n" +
-            "~~~",
-        matchedLength: ("~~~ aa ``` ~~~\n" +
-            "foo\n" +
-            "~~~").length,
-        expectedElement: new CodeBlock("foo\n", "aa"),
-    });
-    // ??? https://github.github.com/gfm/#example-117
 });
 
 describe("HeaderBlockRule", () => {

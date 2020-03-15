@@ -1,6 +1,6 @@
-import {Rule, RuleContext} from "./rules";
-import {StringStream} from "./source";
-import {Parser} from "./parser";
+import {Rule, RuleContext} from "../rules";
+import {StringStream} from "./stream";
+import {Parser} from "..";
 
 import * as chai from 'chai';
 import Benchmark = require("benchmark");

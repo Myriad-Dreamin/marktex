@@ -1,6 +1,6 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
-const source_1 = require("./source");
+Object.defineProperty(exports, "__esModule", { value: true });
+const __1 = require("..");
 var BraceType;
 (function (BraceType) {
     // {}
@@ -153,7 +153,7 @@ exports.texCommands = {
             for (let i = 0; i < coveredR; i++) {
                 res = res.replace(replaceRegex[i + coveredL], args[i].text);
             }
-            return tex(ctx, new source_1.StringStream(res + releaseVars(args, coveredR)));
+            return tex(ctx, new __1.StringStream(res + releaseVars(args, coveredR)));
         };
         return '';
     },
@@ -161,13 +161,13 @@ exports.texCommands = {
         if (ctx.underMathEnv) {
             return '\\par';
         }
-        return '<br/>' + tex(ctx, new source_1.StringStream(releaseVars(vars, 0)));
+        return '<br/>' + tex(ctx, new __1.StringStream(releaseVars(vars, 0)));
     },
     indent(ctx, vars, tex) {
         if (ctx.underMathEnv) {
             return '\\indent';
         }
-        return /*'<br/>' + */ tex(ctx, new source_1.StringStream(releaseVars(vars, 0)));
+        return /*'<br/>' + */ tex(ctx, new __1.StringStream(releaseVars(vars, 0)));
     },
     url(ctx, vars, tex) {
         if (ctx.underMathEnv) {
@@ -177,7 +177,7 @@ exports.texCommands = {
             return '';
         }
         return '<a href="' + vars[0].text + '">' + vars[0].text + '</a>' +
-            tex(ctx, new source_1.StringStream(releaseVars(vars, 1)));
+            tex(ctx, new __1.StringStream(releaseVars(vars, 1)));
     },
     section(ctx, vars, tex) {
         if (ctx.underMathEnv) {
@@ -186,8 +186,8 @@ exports.texCommands = {
         if (!expectTheOnlyBrace(vars, traceInvalidCommand('section', ctx))) {
             return '';
         }
-        return '<h1>' + tex(ctx, new source_1.StringStream(vars[0].text)) + '</h1>' +
-            tex(ctx, new source_1.StringStream(releaseVars(vars, 1)));
+        return '<h1>' + tex(ctx, new __1.StringStream(vars[0].text)) + '</h1>' +
+            tex(ctx, new __1.StringStream(releaseVars(vars, 1)));
     },
     subsection(ctx, vars, tex) {
         if (ctx.underMathEnv) {
@@ -196,8 +196,8 @@ exports.texCommands = {
         if (!expectTheOnlyBrace(vars, traceInvalidCommand('subsecion', ctx))) {
             return '';
         }
-        return '<h3>' + tex(ctx, new source_1.StringStream(vars[0].text)) + '</h3>' +
-            tex(ctx, new source_1.StringStream(releaseVars(vars, 1)));
+        return '<h3>' + tex(ctx, new __1.StringStream(vars[0].text)) + '</h3>' +
+            tex(ctx, new __1.StringStream(releaseVars(vars, 1)));
     },
     subsubsection(ctx, vars, tex) {
         if (ctx.underMathEnv) {
@@ -206,8 +206,8 @@ exports.texCommands = {
         if (!expectTheOnlyBrace(vars, traceInvalidCommand('subsubsection', ctx))) {
             return '';
         }
-        return '<h5>' + tex(ctx, new source_1.StringStream(vars[0].text)) + '</h5>' +
-            tex(ctx, new source_1.StringStream(releaseVars(vars, 1)));
+        return '<h5>' + tex(ctx, new __1.StringStream(vars[0].text)) + '</h5>' +
+            tex(ctx, new __1.StringStream(releaseVars(vars, 1)));
     },
     subsubsubsection(ctx, vars, tex) {
         if (ctx.underMathEnv) {
@@ -216,8 +216,8 @@ exports.texCommands = {
         if (!expectTheOnlyBrace(vars, traceInvalidCommand('subsubsubsection', ctx))) {
             return '';
         }
-        return '<h6>' + tex(ctx, new source_1.StringStream(vars[0].text)) + '</h6>' +
-            tex(ctx, new source_1.StringStream(releaseVars(vars, 1)));
+        return '<h6>' + tex(ctx, new __1.StringStream(vars[0].text)) + '</h6>' +
+            tex(ctx, new __1.StringStream(releaseVars(vars, 1)));
     }
 };
 function _braceMatch(res, s, l, r, t) {
@@ -226,10 +226,11 @@ function _braceMatch(res, s, l, r, t) {
         for (let j = 0; j < s.source.length; j++) {
             if (s.source[j] == l) {
                 c++;
-            } else if (s.source[j] == r) {
+            }
+            else if (s.source[j] == r) {
                 c--;
                 if (c === 0) {
-                    res.push({braceType: t, text: s.source.slice(1, j)});
+                    res.push({ braceType: t, text: s.source.slice(1, j) });
                     s.forward(j + 1);
                     return;
                 }
@@ -271,7 +272,8 @@ class LaTeXParser {
                 s.forward(capturing.index + capturing[0].length);
                 let vars = braceMatch(s);
                 markdownText += cmd(ctx, vars, this.tex);
-            } else {
+            }
+            else {
                 markdownText += s.source.slice(0, capturing.index + capturing[0].length);
                 s.forward(capturing.index + capturing[0].length);
             }

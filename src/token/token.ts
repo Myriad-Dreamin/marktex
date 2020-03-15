@@ -1,4 +1,4 @@
-import {StringStream} from "./source";
+import {StringStream} from "..";
 
 enum TokenType {
     Paragraph,

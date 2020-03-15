@@ -1,7 +1,7 @@
-import {StringStream} from "./source";
-import {cn_book_md, latex_md, math_md} from "./data.test";
+import {StringStream} from "..";
+import {cn_book_md, latex_md, math_md} from "../lib/data.test";
 import {Parser} from "./parser";
-import {newRules} from "./rules";
+import {newRules} from "../rules";
 
 
 describe(

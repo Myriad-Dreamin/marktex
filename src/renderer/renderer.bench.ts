@@ -1,7 +1,8 @@
 import {Renderer} from "./renderer";
-import {createContext} from "./test_util";
-import {StringStream} from "./source";
-import {cn_book_md, math_md} from "./data.test";
+import {createContext} from "../lib/test_util";
+import {Parser, StringStream} from "..";
+import {cn_book_md, math_md} from "../lib/data.test";
+import {newRules} from "../rules";
 import Benchmark = require("benchmark");
 
 let suite = new Benchmark.Suite;
@@ -20,7 +21,7 @@ suite.add('render cn_book_md', () => {
     );
 });
 
-let latexRenderer = new Renderer(createContext(), {enableLaTeX: true});
+let latexRenderer = new Renderer(new Parser(newRules({enableLaTeX: true})), {enableLaTeX: true});
 
 // render math_md with latex option x 79,236 ops/sec ±1.12% (95 runs sampled)
 // render cn_book_md with latex option x 610 ops/sec ±0.94% (92 runs sampled)
