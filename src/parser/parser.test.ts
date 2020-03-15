@@ -25,6 +25,35 @@ describe(
                 'are\n' +
                 '* * *\n' +
                 'you today?')), undefined, 2));
+        });
+
+        it('process nested block-quotes block', () => {
+            console.log(JSON.stringify(ctx.parseBlockElements(new StringStream('> ## This is a header.\n' +
+                '> \n' +
+                '> 1.   This is the first list item.\n' +
+                '> 2.   This is the second list item.\n' +
+                '> \n' +
+                '> Here\'s some example code:\n' +
+                '> \n' +
+                '>     return shell_exec("echo $input | $markdown_script");\n')), undefined, 2));
+        });
+
+        it('process std list block', () => {
+            console.log(JSON.stringify(ctx.parseBlockElements(new StringStream('1.  This is a list item with two paragraphs. Lorem ipsum dolor\n' +
+                '    sit amet, consectetuer adipiscing elit. Aliquam hendrerit\n' +
+                '    mi posuere lectus.\n' +
+                '\n' +
+                '    Vestibulum enim wisi, viverra nec, fringilla in, laoreet\n' +
+                '    vitae, risus. Donec sit amet nisl. Aliquam semper ipsum\n' +
+                '    sit amet velit.')), undefined, 2));
+        });
+
+        it('process std code block', () => {
+            console.log(JSON.stringify(ctx.parseBlockElements(new StringStream('    <div class="footer">\n' +
+                '        &copy; 2004 Foo Corporation\n' +
+                '    </div>')), undefined, 2));
         })
+
+
     }
 );
