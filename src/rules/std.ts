@@ -347,9 +347,11 @@ export class LinkOrImageRule implements Rule {
 
     public readonly regex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
     public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\s*\[([^\]]*)]/;
+    public readonly autoLinkRegex: RegExp =
+        /^<(?:(?:mailto|MAILTO):([\w.!#$%&'*+\/=?^`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)|([a-zA-Z][a-zA-Z\d+.-]{1,31}:[^<>\s]*))>/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        return this.matchInline(s, ctx) || this.matchRef(s, ctx);
+        return this.matchInline(s, ctx) || this.matchAutoLink(s, ctx) || this.matchRef(s, ctx);
     };
 
     matchInline(s: StringStream, _: RuleContext): MaybeToken {
@@ -363,6 +365,19 @@ export class LinkOrImageRule implements Rule {
             return new ImageLink(capturing[2], capturing[3], true, capturing[4]);
         } else {
             return new Link(capturing[2], capturing[3], true, capturing[4]);
+        }
+    }
+
+    matchAutoLink(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = this.autoLinkRegex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+        forwardRegexp(s, capturing);
+        if (capturing[1] !== undefined) {
+            return new Link(capturing[1], 'mailto:' + capturing[1], true);
+        } else {
+            return new Link(capturing[2], capturing[2], true);
         }
     }
 
