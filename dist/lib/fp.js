@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.compose = (g, f) => (i) => g(f(i));
 function Id(i) {
     return i;

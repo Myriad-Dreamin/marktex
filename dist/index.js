@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const parser_1 = require("./parser/parser");
 exports.Parser = parser_1.Parser;
 const renderer_1 = require("./renderer/renderer");

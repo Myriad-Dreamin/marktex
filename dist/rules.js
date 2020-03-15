@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", {value: true});
+Object.defineProperty(exports, "__esModule", { value: true });
 const std_1 = require("./rules/std");
 const latex_1 = require("./rules/latex");
 const gfm_1 = require("./rules/gfm");
@@ -63,10 +63,7 @@ function newBlockRules(opts) {
         new std_1.ListBlockRule(),
     ];
     let rules2 = [
-        new latex_1.ParagraphRule({
-            skipLaTeXBlock: (opts === null || opts === void 0 ? void 0 : opts.enableLaTeX) || false,
-            skipMathBlock: true
-        }),
+        new latex_1.ParagraphRule({ skipLaTeXBlock: (opts === null || opts === void 0 ? void 0 : opts.enableLaTeX) || false, skipMathBlock: true }),
     ];
     // default enable
     if ((opts === null || opts === void 0 ? void 0 : opts.enableGFMRules) !== false) {
