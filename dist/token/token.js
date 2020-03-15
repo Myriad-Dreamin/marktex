@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+Object.defineProperty(exports, "__esModule", {value: true});
 var TokenType;
 (function (TokenType) {
     TokenType[TokenType["Paragraph"] = 0] = "Paragraph";
@@ -21,7 +21,9 @@ var TokenType;
 })(TokenType || (TokenType = {}));
 exports.TokenType = TokenType;
 // noinspection JSUnusedGlobalSymbols
-const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlock + 1, StdInlineTokenL = TokenType.InlinePlain, StdInlineTokenR = TokenType.InlineCode + 1, StdBlockTokenCount = StdBlockTokenR - StdBlockTokenL, StdInlineTokenCount = StdInlineTokenR - StdInlineTokenL;
+const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlock + 1,
+    StdInlineTokenL = TokenType.InlinePlain, StdInlineTokenR = TokenType.InlineCode + 1,
+    StdBlockTokenCount = StdBlockTokenR - StdBlockTokenL, StdInlineTokenCount = StdInlineTokenR - StdInlineTokenL;
 exports.StdBlockTokenCount = StdBlockTokenCount;
 exports.StdInlineTokenCount = StdInlineTokenCount;
 class NewLine {
@@ -209,22 +211,19 @@ class ListBlock {
     lookAhead(s) {
         if (this.ordered) {
             return ListBlock.lookAheadOrderedListNumber(s);
-        }
-        else {
+        } else {
             return ListBlock.lookAheadUnorderedListMarker(s);
         }
     }
     lookAhead0(s) {
         if (this.ordered) {
             return '0' <= s.source[0] && s.source[0] <= '9';
-        }
-        else if ('*+-'.includes(s.source[0])) {
+        } else if ('*+-'.includes(s.source[0])) {
             let j = 0;
             for (let i = 0; s.source[i] && s.source[i] != '\n'; i++) {
                 if (s.source[i] == s.source[0]) {
                     j++;
-                }
-                else if (!'\t\r\v\f '.includes(s.source[i])) {
+                } else if (!'\t\r\v\f '.includes(s.source[i])) {
                     j = 0;
                     break;
                 }
@@ -234,7 +233,7 @@ class ListBlock {
         return false;
     }
     static lookAheadOrderedListNumber(s) {
-        for (let i = 0;; i++) {
+        for (let i = 0; ; i++) {
             if ('0' <= s.source[i] && s.source[i] <= '9') {
                 continue;
             }
