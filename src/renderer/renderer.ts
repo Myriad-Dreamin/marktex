@@ -1,5 +1,4 @@
-import {Parser} from "./parser";
-import {StringStream} from "./source";
+import {Parser, StringStream} from "..";
 import {
     BlockElement,
     CodeBlock,
@@ -18,8 +17,8 @@ import {
     Quotes,
     Token,
     TokenType
-} from "./token";
-import {commandFunc, LaTeXParser, texCommands, TexContext} from "./tex-parser";
+} from "../token/token";
+import {commandFunc, LaTeXParser, texCommands, TexContext} from "../parser/tex-parser";
 
 export type HighlightFunc = (code: string, language: string) => string;
 

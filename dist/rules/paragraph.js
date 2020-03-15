@@ -1,18 +1,13 @@
-import {StringStream} from "..";
-import {MaybeToken, Paragraph} from "../token/token";
-import {Rule, RuleContext} from "./rule";
-import {maybeCompose, MaybeF} from "../lib/fp";
+"use strict";
+Object.defineProperty(exports, "__esModule", {value: true});
+const stream_1 = require("../lib/stream");
+const token_1 = require("../token/token");
+const fp_1 = require("../lib/fp");
 
-
-export class ParagraphRule implements Rule {
-    readonly name: string = "Paragraph";
-    readonly description: string = "Standard Markdown Block Rule";
-
-    // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
-
-    protected readonly detect: MaybeF<{ lastChar: string, s: StringStream, i: number }>;
-
-    constructor(opts?: { skipLaTeXBlock: boolean, skipMathBlock: boolean }) {
+class ParagraphRule {
+    constructor(opts) {
+        this.name = "Paragraph";
+        this.description = "Standard Markdown Block Rule";
         let detectors = [this.detectEndPara];
         if (opts && opts.skipMathBlock) {
             detectors.push(this.detectMathBlock);
@@ -20,17 +15,16 @@ export class ParagraphRule implements Rule {
         if (opts && opts.skipLaTeXBlock) {
             detectors.push(this.detectLaTeXBlock);
         }
-
         if (detectors.length !== 3) {
-            this.detect = maybeCompose(...detectors);
+            this.detect = fp_1.maybeCompose(...detectors);
         } else {
             this.detect = this.detectEndPara;
             this.match = this.fastMatch;
         }
     }
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let g: { lastChar: string, s: StringStream, i: number } = {lastChar: '\xff', s: s, i: 0};
+    match(s, ctx) {
+        let g = {lastChar: '\xff', s: s, i: 0};
         if (s.source[0] == '\n') {
             return undefined;
         }
@@ -49,11 +43,11 @@ export class ParagraphRule implements Rule {
         }
         let capturing = s.source.slice(0, g.i);
         s.forward(g.i);
-        return new Paragraph(ctx.parseInlineElements(new StringStream(capturing)));
+        return new token_1.Paragraph(ctx.parseInlineElements(new stream_1.StringStream(capturing)));
     }
 
-    fastMatch(s: StringStream, ctx: RuleContext): MaybeToken {
-        let lastChar: string = 'a', i = 0;
+    fastMatch(s, ctx) {
+        let lastChar = 'a', i = 0;
         if (s.source[0] == '\n') {
             return undefined;
         }
@@ -64,8 +58,7 @@ export class ParagraphRule implements Rule {
             }
             if (lastChar === '\n' && s.source[i] === '\\') {
                 if (i + 1 < s.source.length &&
-                    (('a' <= s.source[i + 1] && s.source[i + 1] <= 'z') || ('A' <= s.source[i + 1] && s.source[i + 1] <= 'Z'))
-                ) {
+                    (('a' <= s.source[i + 1] && s.source[i + 1] <= 'z') || ('A' <= s.source[i + 1] && s.source[i + 1] <= 'Z'))) {
                     i--;
                     break;
                 }
@@ -80,10 +73,10 @@ export class ParagraphRule implements Rule {
         }
         let capturing = s.source.slice(0, i);
         s.forward(i);
-        return new Paragraph(ctx.parseInlineElements(new StringStream(capturing)));
+        return new token_1.Paragraph(ctx.parseInlineElements(new stream_1.StringStream(capturing)));
     }
 
-    protected detectEndPara(g: { lastChar: string, s: StringStream, i: number }) {
+    detectEndPara(g) {
         if (g.lastChar === g.s.source[g.i] && g.lastChar === '\n') {
             g.i--;
             return undefined;
@@ -91,7 +84,7 @@ export class ParagraphRule implements Rule {
         return g;
     }
 
-    protected detectMathBlock(g: { lastChar: string, s: StringStream, i: number }) {
+    detectMathBlock(g) {
         if (g.lastChar === g.s.source[g.i] && g.lastChar === '$') {
             g.i--;
             return undefined;
@@ -99,12 +92,11 @@ export class ParagraphRule implements Rule {
         return g;
     }
 
-    protected detectLaTeXBlock(g: { lastChar: string, s: StringStream, i: number }) {
+    detectLaTeXBlock(g) {
         if (g.lastChar === '\n' && g.s.source[g.i] === '\\') {
             let nextIndex = g.i + 1, nextChar = g.s.source[nextIndex];
             if (nextIndex < g.s.source.length &&
-                (('a' <= nextChar && nextChar <= 'z') || ('A' <= nextChar && nextChar <= 'Z'))
-            ) {
+                (('a' <= nextChar && nextChar <= 'z') || ('A' <= nextChar && nextChar <= 'Z'))) {
                 g.i--;
                 return undefined;
             }
@@ -112,3 +104,5 @@ export class ParagraphRule implements Rule {
         return g;
     }
 }
+
+exports.ParagraphRule = ParagraphRule;

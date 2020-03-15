@@ -14,8 +14,8 @@ import {
     NewLine,
     Paragraph,
     Quotes
-} from "../token";
-import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../test_util";
+} from "../token/token";
+import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/test_util";
 import {
     CodeBlockRule,
     EmphasisRule,

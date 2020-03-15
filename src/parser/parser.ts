@@ -1,6 +1,7 @@
-import {StringStream} from './source';
-import {BlockElement, InlineElement, InlinePlain, MaybeToken, TokenType} from "./token";
-import {blockRules, inlineRules, Rule} from "./rules";
+import {StringStream} from '..';
+import {BlockElement, InlineElement, InlinePlain, MaybeToken, TokenType} from "../token/token";
+import {Rule} from '../rules/rule';
+import {blockRules, inlineRules} from "../rules";
 
 export interface ParserOptions {
     inlineRules?: Rule[];

@@ -1,28 +1,31 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", {value: true});
-const token_1 = require("./token");
-class Lexer {
-    constructor({inlineRules, blockRules}, options) {
-        this.inlineRules = inlineRules;
-        this.blockRules = blockRules;
-        this.options = options;
+const token_1 = require("../token/token");
+const rules_1 = require("../rules");
+
+class Parser {
+    constructor(options) {
+        this.inlineRules = (options === null || options === void 0 ? void 0 : options.inlineRules) || rules_1.inlineRules;
+        this.blockRules = (options === null || options === void 0 ? void 0 : options.blockRules) || rules_1.blockRules;
     }
 
-    lexBlockElement(source) {
-        return this._lex(source, this.blockRules);
+    parseBlockElement(source) {
+        return this._parse(source, this.blockRules);
     }
-    lexInlineElement(source) {
-        return this._lex(source, this.inlineRules);
+
+    parseInlineElement(source) {
+        return this._parse(source, this.inlineRules);
     }
     // noinspection JSUnusedGlobalSymbols
-    lexInlineElements(s) {
+    parseInlineElements(s) {
         let r = [];
         let e = undefined, t = undefined;
         while (!s.eof) {
-            t = this.lexInlineElement(s);
+            t = this.parseInlineElement(s);
             if (e && e.token_type == token_1.TokenType.InlinePlain && t.token_type == token_1.TokenType.InlinePlain) {
                 e.content += t.content;
-            } else {
+            }
+            else {
                 r.push(t);
                 e = t;
             }
@@ -30,14 +33,14 @@ class Lexer {
         return r;
     }
     // noinspection JSUnusedGlobalSymbols
-    lexBlockElements(s) {
+    parseBlockElements(s) {
         let r = [];
         while (!s.eof) {
-            r.push(this.lexBlockElement(s));
+            r.push(this.parseBlockElement(s));
         }
         return r;
     }
-    _lex(source, rules) {
+    _parse(source, rules) {
         for (let rule of rules) {
             let block = rule.match(source, this);
             if (block !== undefined) {
@@ -47,4 +50,4 @@ class Lexer {
         throw new Error("no rule match the stream at pos " + source.pos);
     }
 }
-exports.Lexer = Lexer;
+exports.Parser = Parser;

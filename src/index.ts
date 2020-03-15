@@ -1,6 +1,6 @@
-import {Parser, ParserOptions} from "./parser";
-import {Renderer, RenderOptions} from "./renderer";
-import {StringStream} from "./source";
+import {Parser, ParserOptions} from "./parser/parser";
+import {Renderer, RenderOptions} from "./renderer/renderer";
+import {StringStream} from "./lib/stream";
 import {newBlockRules, newInlineRules, newRules} from "./rules";
 
 

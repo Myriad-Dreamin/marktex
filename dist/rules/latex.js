@@ -1,10 +1,11 @@
-import {forwardRegexp, StringStream} from "../lib/stream";
-import {Rule, RuleContext} from "./rule";
-import {InlinePlain, LateXBlock, MathBlock, MaybeToken} from "../token/token";
+"use strict";
+Object.defineProperty(exports, "__esModule", {value: true});
+const stream_1 = require("../lib/stream");
+const token_1 = require("../token/token");
 
-function _braceMatch(s: StringStream, l: string, r: string): string {
+function _braceMatch(s, l, r) {
     if (s.source[0] == l) {
-        let c: number = 0;
+        let c = 0;
         for (let j = 0; j < s.source.length; j++) {
             if (s.source[j] == l) {
                 c++;
@@ -24,24 +25,23 @@ function _braceMatch(s: StringStream, l: string, r: string): string {
     return '';
 }
 
-export class InlineLatexCommandRule implements Rule {
-    readonly name: string = "InlineLatexCommand";
-    readonly description: string = "Latex Inline Rule";
+class InlineLatexCommandRule {
+    constructor() {
+        this.name = "InlineLatexCommand";
+        this.description = "Latex Inline Rule";
+    }
 
-    public static readonly cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
-
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s, _) {
         let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
-
-        forwardRegexp(s, capturing);
-        return new InlinePlain(capturing[0] + this.braceMatch(s));
+        stream_1.forwardRegexp(s, capturing);
+        return new token_1.InlinePlain(capturing[0] + this.braceMatch(s));
     }
 
-    braceMatch(s: StringStream) {
-        let res: string = '';
+    braceMatch(s) {
+        let res = '';
         for (let i = 0; !s.eof; i = 0) {
             for (; !s.eof && ' \n\t\v\f\r'.includes(s.source[i]); i++) {
             }
@@ -59,24 +59,26 @@ export class InlineLatexCommandRule implements Rule {
     }
 }
 
-export class LatexBlockRule implements Rule {
-    readonly name: string = "LatexBlock";
-    readonly description: string = "Latex Inline Rule";
+exports.InlineLatexCommandRule = InlineLatexCommandRule;
+InlineLatexCommandRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
 
-    public static readonly cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
+class LatexBlockRule {
+    constructor() {
+        this.name = "LatexBlock";
+        this.description = "Latex Inline Rule";
+    }
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s, _) {
         let capturing = InlineLatexCommandRule.cmdNameRegex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
-
-        forwardRegexp(s, capturing);
-        return new LateXBlock(capturing[0] + this.braceMatch(s));
+        stream_1.forwardRegexp(s, capturing);
+        return new token_1.LateXBlock(capturing[0] + this.braceMatch(s));
     }
 
-    braceMatch(s: StringStream) {
-        let res: string = '';
+    braceMatch(s) {
+        let res = '';
         for (let i = 0; !s.eof; i = 0) {
             for (; !s.eof && ' \t\v\f\r'.includes(s.source[i]); i++) {
             }
@@ -101,36 +103,45 @@ export class LatexBlockRule implements Rule {
     }
 }
 
-export class InlineMathRule implements Rule {
-    readonly name: string = "InlineMath";
-    readonly description: string = "Markdown Inline Rule";
+exports.LatexBlockRule = LatexBlockRule;
+LatexBlockRule.cmdNameRegex = /^\\([a-zA-Z_]\w*)/;
 
-    public readonly regex: RegExp = /^\$((?:[^$]|\\\$)+)\$/;
+class InlineMathRule {
+    constructor() {
+        this.name = "InlineMath";
+        this.description = "Markdown Inline Rule";
+        this.regex = /^\$((?:[^$]|\\\$)+)\$/;
+    }
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
-
-        forwardRegexp(s, capturing);
-        return new MathBlock(capturing[1], true);
-    };
+        stream_1.forwardRegexp(s, capturing);
+        return new token_1.MathBlock(capturing[1], true);
+    }
+    ;
 }
 
-export class MathBlockRule implements Rule {
-    readonly name: string = "MathBlock";
-    readonly description: string = "Markdown Block Rule";
+exports.InlineMathRule = InlineMathRule;
 
-    public readonly regex: RegExp = /^\$\$((?:[^$]|\\\$)+)\$\$/;
+class MathBlockRule {
+    constructor() {
+        this.name = "MathBlock";
+        this.description = "Markdown Block Rule";
+        this.regex = /^\$\$((?:[^$]|\\\$)+)\$\$/;
+    }
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s, _) {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
-
-        forwardRegexp(s, capturing);
-        return new MathBlock(capturing[1], false);
-    };
+        stream_1.forwardRegexp(s, capturing);
+        return new token_1.MathBlock(capturing[1], false);
+    }
+    ;
 }
+
+exports.MathBlockRule = MathBlockRule;

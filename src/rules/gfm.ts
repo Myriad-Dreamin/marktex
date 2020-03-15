@@ -1,6 +1,6 @@
 import {Rule, RuleContext} from "./rule";
-import {forwardRegexp, StringStream} from "../source";
-import {CodeBlock, MaybeToken} from "../token";
+import {forwardRegexp, StringStream} from "../lib/stream";
+import {CodeBlock, MaybeToken} from "../token/token";
 
 export class GFMFencedCodeBlockRule implements Rule {
     readonly name: string = "GFMCodeBlock";

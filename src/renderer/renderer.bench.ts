@@ -1,9 +1,8 @@
 import {Renderer} from "./renderer";
-import {createContext} from "./test_util";
-import {StringStream} from "./source";
-import {cn_book_md, math_md} from "./data.test";
-import {Parser} from "./parser";
-import {newRules} from "./rules";
+import {createContext} from "../lib/test_util";
+import {Parser, StringStream} from "..";
+import {cn_book_md, math_md} from "../lib/data.test";
+import {newRules} from "../rules";
 import Benchmark = require("benchmark");
 
 let suite = new Benchmark.Suite;

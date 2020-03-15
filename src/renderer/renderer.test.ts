@@ -1,8 +1,7 @@
 import {Renderer} from "./renderer";
-import {StringStream} from "./source";
-import {latex_md, math_md} from "./data.test";
-import {Parser} from "./parser";
-import {newRules} from "./rules";
+import {Parser, StringStream} from "..";
+import {latex_md, math_md} from "../lib/data.test";
+import {newRules} from "../rules";
 
 
 // console.log(new Renderer(new Parser({

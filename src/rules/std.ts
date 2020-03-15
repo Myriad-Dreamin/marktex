@@ -1,5 +1,5 @@
 import {Rule, RuleContext} from "./rule";
-import {forwardRegexp, StringStream} from "../source";
+import {forwardRegexp, StringStream} from "../lib/stream";
 import {
     CodeBlock,
     Emphasis,
@@ -16,10 +16,64 @@ import {
     MaybeToken,
     NewLine,
     Quotes
-} from "../token";
+} from "../token/token";
+
+// Standard Markdown Rules
+// https://daringfireball.net/projects/markdown/syntax
+// Standard Block Rules
+//     NewLine
+//     Quotes
+//     List
+//     Code
+//     Header
+//     Horizontal
+//     LinkDefinition
+//     HTML
+// Standard Inline Rules
+//     Link
+//     ImageLink
+//     Emphasis
+//     Code
+//
+
+export class NewLineRule implements Rule {
+    readonly name: string = "Standard/Block/NewLine";
+    readonly description: string = "Standard Markdown Block Rule";
+
+    public readonly regex: RegExp = /^\s+/;
+
+    match(s: StringStream, _: RuleContext): MaybeToken {
+        let capturing = this.regex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        forwardRegexp(s, capturing);
+        return new NewLine(capturing[0]);
+    };
+}
+
+export class QuotesRule implements Rule {
+    readonly name: string = "Standard/Block/Quotes";
+    readonly description: string = "Standard Markdown Block Rule";
+
+    public readonly regex: RegExp = /^( *>[^\n]*(?:\n[^\n]+)*\n?)+/;
+
+    match(s: StringStream, ctx: RuleContext): MaybeToken {
+        let capturing = this.regex.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        forwardRegexp(s, capturing);
+        return new Quotes(ctx.parseBlockElements(
+            new StringStream(capturing[0].replace(/^ *> ?/gm, ''))
+        ));
+    };
+}
 
 export class CodeBlockRule implements Rule {
-    readonly name: string = "CodeBlock";
+    readonly name: string = "Standard/Block/CodeBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
     public static readonly regex: RegExp = /^((?: {4}|\t)[^\n]+(\n|$))+/;
@@ -36,7 +90,7 @@ export class CodeBlockRule implements Rule {
 }
 
 export class HeaderBlockRule implements Rule {
-    readonly name: string = "HeaderBlock";
+    readonly name: string = "Standard/Block/HeaderBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
     public readonly atxRegex: RegExp = /^(#{1,6}) ([^\n]*?)#*(?:\n|$)/;
@@ -66,7 +120,7 @@ export class HeaderBlockRule implements Rule {
 }
 
 export class HorizontalRule implements Rule {
-    readonly name: string = "Horizontal";
+    readonly name: string = "Standard/Block/Horizontal";
     readonly description: string = "Standard Markdown Block Rule";
 
     public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})(?:\n|$)/;
@@ -82,105 +136,8 @@ export class HorizontalRule implements Rule {
     };
 }
 
-export class RegExpWithTagName extends RegExp {
-    protected gIndex: number;
-
-    constructor(r: RegExp, gIndex: number) {
-        super(r);
-        this.gIndex = gIndex;
-    }
-
-    // noinspection JSUnusedGlobalSymbols
-    getTagName(g: RegExpExecArray): string {
-        return g[this.gIndex];
-    }
-}
-
-export class OpenTagRegExp extends RegExpWithTagName {
-    protected gOpenIndex: number;
-
-    constructor(r: RegExp, gIndex: number, gOpenIndex: number) {
-        super(r, gIndex);
-        this.gOpenIndex = gOpenIndex;
-    }
-
-    isSingleton(g: RegExpExecArray): boolean {
-        return g[this.gOpenIndex] !== '/'
-    }
-}
-
-export interface HTMLTagsRegexps {
-    validTags: RegExp;
-    open_tag: OpenTagRegExp;
-    close_tag: RegExpWithTagName;
-    comment: RegExp;
-    others: RegExp[];
-}
-
-export class HTMLBlockRule implements Rule {
-    readonly name: string = "HTMLBlock";
-    readonly description: string = "Standard Markdown Block Rule";
-    private validTags: HTMLTagsRegexps;
-
-    constructor(validTags: HTMLTagsRegexps) {
-        this.validTags = validTags;
-    }
-
-
-    // public readonly singleTonRegex: RegExp = /^/;
-    // public readonly stdRegex: RegExp = /^/;
-
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let ot: OpenTagRegExp = this.validTags.open_tag;
-        let capturing = ot.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        if (ot.isSingleton(capturing)) {
-            return new HTMLBlock(capturing[0]);
-        }
-
-        return undefined
-    };
-}
-
-export class InlinePlainExceptSpecialMarksRule implements Rule {
-    readonly name: string = "InlinePlainExceptSpecialMarks";
-    readonly description: string = "Standard Markdown Inline Rule";
-
-    public readonly regex: RegExp = /^(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+/;
-
-    match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new InlinePlain(capturing[0]);
-    };
-}
-
-export class InlinePlainRule implements Rule {
-    readonly name: string = "InlinePlain";
-    readonly description: string = "Standard Markdown Inline Rule";
-
-    public readonly regex: RegExp = /^(?:[<`_*\[$\\](?:\\[<`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+)/;
-
-    match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new InlinePlain(capturing[0]);
-    };
-}
-
 export class LinkDefinitionRule implements Rule {
-    readonly name: string = "LinkDefinition";
+    readonly name: string = "Standard/Block/LinkDefinition";
     readonly description: string = "Standard Markdown Block Rule";
     public readonly regex: RegExp = /^ *\[([^\]]+)]: *<?([^\s>]+)>?(?: +["'(]([^\n]*)["')])? *(?:\n|$)/;
 
@@ -195,7 +152,7 @@ export class LinkDefinitionRule implements Rule {
 }
 
 export class ListBlockRule implements Rule {
-    readonly name: string = "ListBlock";
+    readonly name: string = "Standard/Block/ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
     public static readonly blankRegex = /^[\t\v\f ]*\n/;
     public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:(?=[^\n0-9*+-])[^\n]*(?:\n|$))*)/;
@@ -254,11 +211,74 @@ export class ListBlockRule implements Rule {
     }
 }
 
-export class NewLineRule implements Rule {
-    readonly name: string = "NewLine";
-    readonly description: string = "Standard Markdown Block Rule";
+export class RegExpWithTagName extends RegExp {
+    protected gIndex: number;
 
-    public readonly regex: RegExp = /^\s+/;
+    constructor(r: RegExp, gIndex: number) {
+        super(r);
+        this.gIndex = gIndex;
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    getTagName(g: RegExpExecArray): string {
+        return g[this.gIndex];
+    }
+}
+
+export class OpenTagRegExp extends RegExpWithTagName {
+    protected gOpenIndex: number;
+
+    constructor(r: RegExp, gIndex: number, gOpenIndex: number) {
+        super(r, gIndex);
+        this.gOpenIndex = gOpenIndex;
+    }
+
+    isSingleton(g: RegExpExecArray): boolean {
+        return g[this.gOpenIndex] !== '/'
+    }
+}
+
+export interface HTMLTagsRegexps {
+    validTags: RegExp;
+    open_tag: OpenTagRegExp;
+    close_tag: RegExpWithTagName;
+    comment: RegExp;
+    others: RegExp[];
+}
+
+export class HTMLBlockRule implements Rule {
+    readonly name: string = "Standard/Block/HTMLBlock";
+    readonly description: string = "Standard Markdown Block Rule";
+    private validTags: HTMLTagsRegexps;
+
+    constructor(validTags: HTMLTagsRegexps) {
+        this.validTags = validTags;
+    }
+
+
+    // public readonly singleTonRegex: RegExp = /^/;
+    // public readonly stdRegex: RegExp = /^/;
+
+    match(s: StringStream, ctx: RuleContext): MaybeToken {
+        let ot: OpenTagRegExp = this.validTags.open_tag;
+        let capturing = ot.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        if (ot.isSingleton(capturing)) {
+            return new HTMLBlock(capturing[0]);
+        }
+
+        return undefined
+    };
+}
+
+export class InlinePlainExceptSpecialMarksRule implements Rule {
+    readonly name: string = "Standard/Inline/InlinePlainExceptSpecialMarks";
+    readonly description: string = "Standard Markdown Inline Rule";
+
+    public readonly regex: RegExp = /^(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -267,31 +287,29 @@ export class NewLineRule implements Rule {
         }
 
         forwardRegexp(s, capturing);
-        return new NewLine(capturing[0]);
+        return new InlinePlain(capturing[0]);
     };
 }
 
-export class QuotesRule implements Rule {
-    readonly name: string = "Quotes";
-    readonly description: string = "Standard Markdown Block Rule";
+export class InlinePlainRule implements Rule {
+    readonly name: string = "Standard/Inline/InlinePlain";
+    readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^( *>[^\n]*(?:\n[^\n]+)*\n?)+/;
+    public readonly regex: RegExp = /^(?:[<`_*\[$\\](?:\\[<`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+)/;
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
+    match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
         }
 
         forwardRegexp(s, capturing);
-        return new Quotes(ctx.parseBlockElements(
-            new StringStream(capturing[0].replace(/^ *> ?/gm, ''))
-        ));
+        return new InlinePlain(capturing[0]);
     };
 }
 
 export class LinkOrImageRule implements Rule {
-    readonly name: string = "Link";
+    readonly name: string = "Standard/Inline/Link";
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
@@ -330,7 +348,7 @@ export class LinkOrImageRule implements Rule {
 }
 
 export class EmphasisRule implements Rule {
-    readonly name: string = "Emphasis";
+    readonly name: string = "Standard/Inline/Emphasis";
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(?:(_{1,2})([^_]+?)(_{1,2})|(\*{1,2})([^*]+?)(\*{1,2}))/;
@@ -356,7 +374,7 @@ export class EmphasisRule implements Rule {
 }
 
 export class InlineCodeRule implements Rule {
-    readonly name: string = "InlineCode";
+    readonly name: string = "Standard/Inline/InlineCode";
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(?:``([^`\n\r\u2028\u2029](?:`?[^`\n\r\u2028\u2029])*)``|`([^`\n\r\u2028\u2029]+?)`)/;

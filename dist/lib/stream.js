@@ -14,13 +14,22 @@ class StringStream {
     get pos() {
         return this._pos;
     }
+
     get eof() {
         return this._source === "";
     }
+
     forward(n = 1) {
         this._pos = this._pos + Math.min(n, this._source.length);
         this._source = this._source.substr(n);
         return this;
     }
 }
+
 exports.StringStream = StringStream;
+
+function forwardRegexp(s, capturing) {
+    s.forward(capturing[0].length);
+}
+
+exports.forwardRegexp = forwardRegexp;

@@ -1,5 +1,5 @@
-import {StringStream} from "../source";
-import {BlockElement, InlineElement, MaybeToken} from "../token";
+import {StringStream} from "..";
+import {BlockElement, InlineElement, MaybeToken} from "../token/token";
 
 
 export interface RuleContext {
