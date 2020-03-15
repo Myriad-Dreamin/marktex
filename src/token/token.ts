@@ -1,70 +1,36 @@
-import {StringStream} from "..";
-
-enum TokenType {
-    Paragraph,
-    NewLine,
-    Quotes,
-    ListBlock,
-    Horizontal,
-    LinkDefinition,
-    CodeBlock,
-    HTMLBlock,
-    HeaderBlock,
-
-    InlinePlain,
-    Link,
-    ImageLink,
-    Emphasis,
-    InlineCode,
-
-    MathBlock,
-    LatexBlock,
-}
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var TokenType;
+(function (TokenType) {
+    TokenType[TokenType["Paragraph"] = 0] = "Paragraph";
+    TokenType[TokenType["NewLine"] = 1] = "NewLine";
+    TokenType[TokenType["Quotes"] = 2] = "Quotes";
+    TokenType[TokenType["ListBlock"] = 3] = "ListBlock";
+    TokenType[TokenType["Horizontal"] = 4] = "Horizontal";
+    TokenType[TokenType["LinkDefinition"] = 5] = "LinkDefinition";
+    TokenType[TokenType["CodeBlock"] = 6] = "CodeBlock";
+    TokenType[TokenType["HTMLBlock"] = 7] = "HTMLBlock";
+    TokenType[TokenType["HeaderBlock"] = 8] = "HeaderBlock";
+    TokenType[TokenType["InlinePlain"] = 9] = "InlinePlain";
+    TokenType[TokenType["Link"] = 10] = "Link";
+    TokenType[TokenType["ImageLink"] = 11] = "ImageLink";
+    TokenType[TokenType["Emphasis"] = 12] = "Emphasis";
+    TokenType[TokenType["InlineCode"] = 13] = "InlineCode";
+    TokenType[TokenType["MathBlock"] = 14] = "MathBlock";
+    TokenType[TokenType["LatexBlock"] = 15] = "LatexBlock";
+})(TokenType || (TokenType = {}));
+exports.TokenType = TokenType;
 // noinspection JSUnusedGlobalSymbols
-const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlock + 1,
-    StdInlineTokenL = TokenType.InlinePlain, StdInlineTokenR = TokenType.InlineCode + 1,
-    StdBlockTokenCount: number = StdBlockTokenR - StdBlockTokenL,
-    StdInlineTokenCount: number = StdInlineTokenR - StdInlineTokenL;
-
-
-//Markdown provides backslash escapes for the following characters:
-//
-// \   backslash
-// `   backtick
-// *   asterisk
-// _   underscore
-// {}  curly braces
-// []  square brackets
-// ()  parentheses
-// #   hash mark
-// +   plus sign
-// -   minus sign (hyphen)
-// .   dot
-// !   exclamation mark
-
-interface Token {
-    readonly token_type: number;
-}
-
-type MaybeToken = Token | undefined
-
-interface BlockElement extends Token {
-}
-
-interface InlineElement extends Token {
-}
-
-class NewLine implements BlockElement {
-    readonly token_type = TokenType.NewLine;
-    public content: string;
-
-    constructor(content: string) {
+const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlock + 1, StdInlineTokenL = TokenType.InlinePlain, StdInlineTokenR = TokenType.InlineCode + 1, StdBlockTokenCount = StdBlockTokenR - StdBlockTokenL, StdInlineTokenCount = StdInlineTokenR - StdInlineTokenL;
+exports.StdBlockTokenCount = StdBlockTokenCount;
+exports.StdInlineTokenCount = StdInlineTokenCount;
+class NewLine {
+    constructor(content) {
+        this.token_type = TokenType.NewLine;
         this.content = content;
     }
 }
-
-
+exports.NewLine = NewLine;
 /*
 (.*\n{1...1})+
 
@@ -72,15 +38,13 @@ A paragraph is simply one or more consecutive lines of text, separated by one or
 A blank line is any line that looks like a blank line — a line containing nothing but spaces or
 tabs is considered blank.) Normal paragraphs should not be indented with spaces or tabs.
 */
-class Paragraph implements BlockElement {
-    readonly token_type = TokenType.Paragraph;
-    public inlineElements: InlineElement[];
-
-    constructor(inlineElements: InlineElement[]) {
+class Paragraph {
+    constructor(inlineElements) {
+        this.token_type = TokenType.Paragraph;
         this.inlineElements = inlineElements;
     }
 }
-
+exports.Paragraph = Paragraph;
 /*
 > (inside line1...)
 >?
@@ -125,29 +89,21 @@ Block-quotes can contain other Markdown elements, including headers, lists, and 
 >     return shell_exec("echo $input | $markdown_script");
 
 */
-class Quotes implements BlockElement {
-    readonly token_type = TokenType.Quotes;
-    public insideTokens: BlockElement[];
-
-    constructor(tokens: BlockElement[]) {
+class Quotes {
+    constructor(tokens) {
+        this.token_type = TokenType.Quotes;
         this.insideTokens = tokens;
     }
 }
-
-
+exports.Quotes = Quotes;
 class ListElement {
-    public innerBlocks: BlockElement[];
-    public marker: string;
-    // is it good?
-    public blankSeparated: boolean;
-
-    constructor(marker: string, innerBlocks: BlockElement[] = [], blankSeparated: boolean = false) {
+    constructor(marker, innerBlocks = [], blankSeparated = false) {
         this.marker = marker;
         this.innerBlocks = innerBlocks;
         this.blankSeparated = blankSeparated;
     }
 }
-
+exports.ListElement = ListElement;
 /*
 let m = [*+-]
 1.
@@ -244,33 +200,31 @@ tabs.
 a number-period-space sequence at the beginning of a line. To avoid this, you can backslash-escape
 the period.
 */
-class ListBlock implements BlockElement {
-    readonly token_type = TokenType.ListBlock;
-    public listElements: ListElement[];
-    public ordered: boolean;
-
-    constructor(ordered: boolean, listElements: ListElement[] = []) {
+class ListBlock {
+    constructor(ordered, listElements = []) {
+        this.token_type = TokenType.ListBlock;
         this.listElements = listElements;
         this.ordered = ordered;
     }
-
-    public lookAhead(s: StringStream): string | undefined {
+    lookAhead(s) {
         if (this.ordered) {
             return ListBlock.lookAheadOrderedListNumber(s);
-        } else {
+        }
+        else {
             return ListBlock.lookAheadUnorderedListMarker(s);
         }
     }
-
-    public lookAhead0(s: StringStream): boolean {
+    lookAhead0(s) {
         if (this.ordered) {
-            return '0' <= s.source[0] && s.source[0] <= '9'
-        } else if ('*+-'.includes(s.source[0])) {
+            return '0' <= s.source[0] && s.source[0] <= '9';
+        }
+        else if ('*+-'.includes(s.source[0])) {
             let j = 0;
             for (let i = 0; s.source[i] && s.source[i] != '\n'; i++) {
                 if (s.source[i] == s.source[0]) {
                     j++;
-                } else if (!'\t\r\v\f '.includes(s.source[i])) {
+                }
+                else if (!'\t\r\v\f '.includes(s.source[i])) {
                     j = 0;
                     break;
                 }
@@ -279,38 +233,35 @@ class ListBlock implements BlockElement {
         }
         return false;
     }
-
-    public static lookAheadOrderedListNumber(s: StringStream): string | undefined {
-        for (let i = 0; ; i++) {
+    static lookAheadOrderedListNumber(s) {
+        for (let i = 0;; i++) {
             if ('0' <= s.source[i] && s.source[i] <= '9') {
                 continue;
             }
             if (s.source[i] == '.' && s.source[i + 1] == ' ') {
-                let m: string = s.source.substr(0, i);
+                let m = s.source.substr(0, i);
                 s.forward(i + 2);
                 return m;
             }
             return undefined;
         }
     }
-
-    public static lookAheadUnorderedListMarker(s: StringStream): string | undefined {
+    static lookAheadUnorderedListMarker(s) {
         if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
-            let m: string = s.source[0];
+            let m = s.source[0];
             s.forward(2);
             return m;
         }
         return undefined;
     }
 }
-
-class Horizontal implements BlockElement {
-    readonly token_type = TokenType.Horizontal;
-
+exports.ListBlock = ListBlock;
+class Horizontal {
     constructor() {
+        this.token_type = TokenType.Horizontal;
     }
 }
-
+exports.Horizontal = Horizontal;
 /*
 +   Square brackets containing the link identifier (optionally indented from the left margin using up
     to three spaces);
@@ -326,21 +277,15 @@ The following three link definitions are equivalent:
 [foo]: http://example.com/  'Optional Title Here'
 [foo]: http://example.com/  (Optional Title Here)
 */
-class LinkDefinition implements BlockElement {
-    readonly token_type = TokenType.LinkDefinition;
-    public linkIdentifier: string;
-    public url: string;
-    public title?: string;
-
-
-    constructor(linkIdentifier: string, url: string, title?: string) {
+class LinkDefinition {
+    constructor(linkIdentifier, url, title) {
+        this.token_type = TokenType.LinkDefinition;
         this.linkIdentifier = linkIdentifier;
         this.url = url;
         this.title = title;
     }
 }
-
-
+exports.LinkDefinition = LinkDefinition;
 /*
     (.*\n)+
     (.*\n)+
@@ -351,18 +296,14 @@ HTML entities. This makes it very easy to include example HTML source code using
 paste it and indent it, and Markdown will handle the hassle of encoding the ampersands and angle
 brackets.
 */
-class CodeBlock implements BlockElement {
-    readonly token_type = TokenType.CodeBlock;
-    public body: string;
-    public language?: string;
-
-    constructor(body: string, language?: string) {
+class CodeBlock {
+    constructor(body, language) {
+        this.token_type = TokenType.CodeBlock;
         this.body = body;
         this.language = language;
     }
 }
-
-
+exports.CodeBlock = CodeBlock;
 /*
 <any>...<any>
 
@@ -377,16 +318,13 @@ This is a regular paragraph.
 
 This is another regular paragraph.
 */
-class HTMLBlock implements BlockElement {
-    readonly token_type = TokenType.HTMLBlock;
-    public body: string;
-
-    constructor(body: string) {
+class HTMLBlock {
+    constructor(body) {
+        this.token_type = TokenType.HTMLBlock;
         this.body = body;
     }
 }
-
-
+exports.HTMLBlock = HTMLBlock;
 /*
 1.
     .*\n[=-]{1...}
@@ -424,133 +362,68 @@ open the header. (The number of opening hashes determines the header level.) :
 
 ### This is an H3 ######
 */
-class HeaderBlock implements BlockElement {
-    readonly token_type = TokenType.HeaderBlock;
-    public inlineElements: InlineElement[];
-    public level: number;
-
-    constructor(inlineElements: InlineElement[], level: number) {
+class HeaderBlock {
+    constructor(inlineElements, level) {
+        this.token_type = TokenType.HeaderBlock;
         this.inlineElements = inlineElements;
         this.level = level;
     }
 }
-
-
-class InlinePlain implements InlineElement {
-    readonly token_type = TokenType.InlinePlain;
-    public content: string;
-
-    constructor(content: string) {
+exports.HeaderBlock = HeaderBlock;
+class InlinePlain {
+    constructor(content) {
+        this.token_type = TokenType.InlinePlain;
         this.content = content;
     }
 }
-
-
-class Link implements InlineElement {
-    readonly token_type = TokenType.Link;
-    public linkTitle: string;
-    public link: string;
-    public inlineOrReference: boolean;
-    public title?: string;
-
-    constructor(linkTitle: string, link: string, inline: boolean, title?: string) {
+exports.InlinePlain = InlinePlain;
+class Link {
+    constructor(linkTitle, link, inline, title) {
+        this.token_type = TokenType.Link;
         this.linkTitle = linkTitle;
         this.link = link;
         this.inlineOrReference = inline;
         this.title = title;
     }
 }
-
-class ImageLink implements InlineElement {
-    readonly token_type = TokenType.ImageLink;
-    public linkTitle: string;
-    public link: string;
-    public inlineOrReference: boolean;
-    public title?: string;
-
-    constructor(linkTitle: string, link: string, inline: boolean, title?: string) {
+exports.Link = Link;
+class ImageLink {
+    constructor(linkTitle, link, inline, title) {
+        this.token_type = TokenType.ImageLink;
         this.linkTitle = linkTitle;
         this.link = link;
         this.inlineOrReference = inline;
         this.title = title;
     }
 }
-
-
-class Emphasis implements InlineElement {
-    readonly token_type = TokenType.Emphasis;
-    public content: string;
-    public level: number; /* 1~2 */
-
-    constructor(content: string, level: number) {
+exports.ImageLink = ImageLink;
+class Emphasis {
+    constructor(content, level) {
+        this.token_type = TokenType.Emphasis;
         this.content = content;
         this.level = level;
     }
 }
-
-class InlineCode implements InlineElement {
-    readonly token_type = TokenType.InlineCode;
-    public content: string;
-
-    constructor(content: string) {
+exports.Emphasis = Emphasis;
+class InlineCode {
+    constructor(content) {
+        this.token_type = TokenType.InlineCode;
         this.content = content;
     }
 }
-
-
-class LateXBlock implements InlineElement {
-    readonly token_type = TokenType.LatexBlock;
-
-    public content: string;
-    public inline?: boolean;
-
-    constructor(content: string) {
+exports.InlineCode = InlineCode;
+class LateXBlock {
+    constructor(content) {
+        this.token_type = TokenType.LatexBlock;
         this.content = content;
     }
 }
-
-
-class MathBlock implements InlineElement {
-    readonly token_type = TokenType.MathBlock;
-
-    public content: string;
-    public inline?: boolean;
-
-    constructor(content: string, inline: boolean) {
+exports.LateXBlock = LateXBlock;
+class MathBlock {
+    constructor(content, inline) {
+        this.token_type = TokenType.MathBlock;
         this.content = content;
         this.inline = inline;
     }
 }
-
-
-export {
-    TokenType,
-    Token,
-    BlockElement,
-    InlineElement,
-    ListElement,
-    MaybeToken,
-}
-
-export {
-    Paragraph,
-    NewLine,
-    Quotes,
-    ListBlock,
-    Horizontal,
-    LinkDefinition,
-    CodeBlock,
-    HTMLBlock,
-    HeaderBlock,
-    MathBlock,
-    LateXBlock,
-
-    InlinePlain,
-    Link,
-    ImageLink,
-    Emphasis,
-    InlineCode,
-
-    StdBlockTokenCount,
-    StdInlineTokenCount,
-}
+exports.MathBlock = MathBlock;
