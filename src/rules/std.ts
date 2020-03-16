@@ -251,67 +251,119 @@ export class ListBlockRule implements Rule {
     }
 }
 
-export class RegExpWithTagName extends RegExp {
-    protected gIndex: number;
+export interface RegExpWithTagName {
+    exec(string: string): RegExpExecArray | null;
 
-    constructor(r: RegExp, gIndex: number) {
-        super(r);
-        this.gIndex = gIndex;
-    }
-
-    // noinspection JSUnusedGlobalSymbols
-    getTagName(g: RegExpExecArray): string {
-        return g[this.gIndex];
-    }
+    getTagName(g: RegExpExecArray): string;
 }
 
-export class OpenTagRegExp extends RegExpWithTagName {
-    protected gOpenIndex: number;
-
-    constructor(r: RegExp, gIndex: number, gOpenIndex: number) {
-        super(r, gIndex);
-        this.gOpenIndex = gOpenIndex;
-    }
-
-    isSingleton(g: RegExpExecArray): boolean {
-        return g[this.gOpenIndex] !== '/'
-    }
+export interface OpenTagRegExp extends RegExpWithTagName {
+    isSingleton(g: RegExpExecArray): boolean;
 }
 
-export interface HTMLTagsRegexps {
-    validTags: RegExp;
-    open_tag: OpenTagRegExp;
-    close_tag: RegExpWithTagName;
-    comment: RegExp;
-    others: RegExp[];
+export interface HTMLBlockOptions {
+    open_tag?: OpenTagRegExp;
+    close_tag?: RegExpWithTagName;
+    others?: RegExp;
+    safeHTMLTagFilter?: (tag: string) => boolean;
+}
+
+function defaultValidTags() {
+    ///^<([a-zA-Z][a-zA-Z0-9-]*)(?:\s+(?:[a-zA-Z_:][a-zA-Z0-9_.:-]*)(?:\s*=\s*(?:[^\/\s'"=<>`]|'[^']*'|"[^"]*"))?)*\s*(\/?)>/
+    let ot: any = /^<([a-zA-Z][\w-]*)(?:\s+(?:[\w:@][\w.:-]*)(?:\s*=\s*(?:[^\/\s'"=<>`]+|'[^']*'|"[^"]*"))?)*\s*(\/?)>/;
+    ///^(?:<\/((?:[a-zA-Z][a-zA-Z0-9-]*))\s*>)/
+    let ct: any = /^<\/(\w+)\s*>/;
+
+    ct.getTagName = ot.getTagName = function (g: RegExpExecArray): string {
+        return g[1]
+    };
+    ot.isSingleton = function (g: RegExpExecArray): boolean {
+        return g[2] === '/';
+    };
+
+    return {
+        open_tag: ot,
+        close_tag: ct,
+        ///^(?:<!--(?:[^>-]|-[^>])(?:[^-]|-?[^-])*[^-]-->)|(?:<\?(?:(?!\?>).)*\?>)|(?:<![A-Z]+[^>]*>)|(?:<!\[CDATA(?:(?!]]>)\s\S)*]]>)/
+        others: /^<(?:!--(?:[^>-]|-[^>])(?:[^-]|-?[^-])*[^-]-->|\?(?:(?!\?>)[\s\S])*\?>|![A-Z]+[^>]*>|!\[CDATA(?:(?!]]>)\s\S)*]]>)/,
+    };
 }
 
 export class HTMLBlockRule implements Rule {
     readonly name: string = "Standard/Block/HTMLBlock";
     readonly description: string = "Standard Markdown Block Rule";
-    private validTags: HTMLTagsRegexps;
+    protected readonly open_tag: OpenTagRegExp;
+    protected readonly close_tag: RegExpWithTagName;
+    protected readonly others: RegExp;
+    protected readonly safeHTMLTagFilter?: (tag: string) => boolean;
 
-    constructor(validTags: HTMLTagsRegexps) {
-        this.validTags = validTags;
+    constructor(validTags?: HTMLBlockOptions) {
+        let v = Object.assign(validTags || {}, defaultValidTags());
+        this.open_tag = v.open_tag;
+        this.close_tag = v.close_tag;
+        this.others = v.others;
+        this.safeHTMLTagFilter = v.safeHTMLTagFilter;
     }
 
-
-    // public readonly singleTonRegex: RegExp = /^/;
-    // public readonly stdRegex: RegExp = /^/;
-
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let ot: OpenTagRegExp = this.validTags.open_tag;
-        let capturing = ot.exec(s.source);
+        if (s.source[0] !== '<') {
+            return undefined;
+        }
+        return this.matchBlock(s) || this.matchOthers(s);
+    }
+
+    matchBlock(s: StringStream): MaybeToken {
+        let capturing = this.filterTag(s, this.open_tag);
         if (capturing === null) {
             return undefined;
         }
 
-        if (ot.isSingleton(capturing)) {
+        if (this.open_tag.isSingleton(capturing)) {
+            forwardRegexp(s, capturing);
             return new HTMLBlock(capturing[0]);
         }
 
-        return undefined
-    };
+        return this.gfmStyleForward(s, capturing);
+    }
+
+    matchOthers(s: StringStream): MaybeToken {
+        let capturing = this.filterTag(s, this.close_tag) || this.others.exec(s.source);
+        if (capturing === null) {
+            return undefined;
+        }
+
+        return this.gfmStyleForward(s, capturing);
+    }
+
+    filterTag(s: StringStream, filter: { exec(s: string): RegExpExecArray | null, getTagName(r: RegExpExecArray): string }) {
+
+        let capturing = filter.exec(s.source);
+        if (capturing === null) {
+            return null;
+        }
+        let tag: string = filter.getTagName(capturing);
+        if (this.safeHTMLTagFilter && !this.safeHTMLTagFilter(tag)) {
+            return null;
+        }
+        return capturing;
+    }
+
+    gfmStyleForward(s: StringStream, capturing: RegExpExecArray): HTMLBlock {
+
+        forwardRegexp(s, capturing);
+        let lastChar = 'a', i = 0;
+        for (; i < s.source.length; i++) {
+            if (lastChar === '\n' && '\n' === s.source[i]) {
+                i--;
+                break;
+            }
+            lastChar = s.source[i];
+        }
+
+        let res = capturing[0] + s.source.slice(0, i);
+        s.forward(i);
+        return new HTMLBlock(res);
+    }
 }
 
 export class InlinePlainExceptSpecialMarksRule implements Rule {
