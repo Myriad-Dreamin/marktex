@@ -27,7 +27,7 @@ export interface CreateBlockRuleOptions {
     enableHtml?: boolean;
     enableLaTeX?: boolean;
     enableGFMRules?: boolean;
-    HTMLBlockOptions?: HTMLBlockOptions;
+    validTags?: HTMLBlockOptions;
 }
 
 export interface CreateInlineRuleOptions {
@@ -67,7 +67,7 @@ export function newBlockRules(
     }
 
     if (opts?.enableHtml) {
-        rules0.push(new HTMLBlockRule(opts?.HTMLBlockOptions));
+        rules0.push(new HTMLBlockRule(opts?.validTags));
     }
 
     return [...rules0, ...rules1, ...rules2];
