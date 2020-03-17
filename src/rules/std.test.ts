@@ -90,12 +90,12 @@ describe("InlinePlainExceptSpecialMarksRule", () => {
     notMatch({text: "*"});
     notMatch({text: "_"});
     notMatch({text: "`"});
-    match({text: "   \\`", matchedLength: 5, expectedElement: new InlinePlain("   \\`")});
-    match({text: "ggg\\<", matchedLength: 5, expectedElement: new InlinePlain("ggg\\<")});
-    match({text: "ggg\\[", matchedLength: 5, expectedElement: new InlinePlain("ggg\\[")});
-    match({text: "ggg\\*", matchedLength: 5, expectedElement: new InlinePlain("ggg\\*")});
-    match({text: "ggg\\_", matchedLength: 5, expectedElement: new InlinePlain("ggg\\_")});
-    match({text: "ggg\\`", matchedLength: 5, expectedElement: new InlinePlain("ggg\\`")});
+    match({text: "   \\`", matchedLength: 5, expectedElement: new InlinePlain("   `")});
+    match({text: "ggg\\<", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
+    match({text: "ggg\\[", matchedLength: 5, expectedElement: new InlinePlain("ggg[")});
+    match({text: "ggg\\*", matchedLength: 5, expectedElement: new InlinePlain("ggg*")});
+    match({text: "ggg\\_", matchedLength: 5, expectedElement: new InlinePlain("ggg_")});
+    match({text: "ggg\\`", matchedLength: 5, expectedElement: new InlinePlain("ggg`")});
 
 });
 

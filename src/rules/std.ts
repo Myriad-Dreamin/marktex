@@ -19,6 +19,7 @@ import {
     Quotes
 } from "../token/token";
 
+
 // Standard Markdown Rules
 // https://daringfireball.net/projects/markdown/syntax
 // Standard Block Rules
@@ -37,6 +38,25 @@ import {
 //     Emphasis
 //     Code
 //
+
+function unescapeBackSlash(s: string): string {
+    return s
+        .replace(/\\\\/g, "\\")
+        .replace(/\\`/g, "`")
+        .replace(/\\\*/g, "*")
+        .replace(/\\_/g, "_")
+        .replace(/\\{/g, "{")
+        .replace(/\\}/g, "}")
+        .replace(/\\\[/g, "[")
+        .replace(/\\]/g, "]")
+        .replace(/\\\(/g, "(")
+        .replace(/\\\)/g, ")")
+        .replace(/\\#/g, "#")
+        .replace(/\\\+/g, "+")
+        .replace(/\\-/g, "-")
+        .replace(/\\\./g, ".")
+        .replace(/\\!/g, "!");
+}
 
 export class NewLineRule implements Rule {
     readonly name: string = "Standard/Block/NewLine";
@@ -179,7 +199,7 @@ export class HorizontalRule implements Rule {
 export class LinkDefinitionRule implements Rule {
     readonly name: string = "Standard/Block/LinkDefinition";
     readonly description: string = "Standard Markdown Block Rule";
-    public readonly regex: RegExp = /^ *\[((?:\\]|[^\]])+)]: *<?([^\s>]+)>?(?: +["'(]([^\n]*)["')])? *(?:\n|$)/;
+    public readonly regex: RegExp = /^ *\[((?:\\\\|\\]|[^\]])+)]: *<?([^\s>]+)>?(?: +["'(]([^\n]*)["')])? *(?:\n|$)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -187,7 +207,7 @@ export class LinkDefinitionRule implements Rule {
             return undefined;
         }
         forwardRegexp(s, capturing);
-        return new LinkDefinition(capturing[1], capturing[2], capturing[3]);
+        return new LinkDefinition(unescapeBackSlash(capturing[1]), capturing[2], capturing[3]);
     };
 }
 
@@ -370,7 +390,7 @@ export class InlinePlainExceptSpecialMarksRule implements Rule {
     readonly name: string = "Standard/Inline/InlinePlainExceptSpecialMarks";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+/;
+    public readonly regex: RegExp = /^(?:\\[`_*\[$\\]|[^<`_*\[$\\])+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -379,7 +399,7 @@ export class InlinePlainExceptSpecialMarksRule implements Rule {
         }
 
         forwardRegexp(s, capturing);
-        return new InlinePlain(capturing[0]);
+        return new InlinePlain(unescapeBackSlash(capturing[0]));
     };
 }
 
@@ -387,7 +407,7 @@ export class InlinePlainRule implements Rule {
     readonly name: string = "Standard/Inline/InlinePlain";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:[<`_*\[$\\](?:\\[<`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[<`_*\[$\\]|[^<`_*\[$\\])+)/;
+    public readonly regex: RegExp = /^(?:[<`_*\[$\\](?:\\[`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[`_*\[$\\]|[^<`_*\[$\\])+)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -396,7 +416,7 @@ export class InlinePlainRule implements Rule {
         }
 
         forwardRegexp(s, capturing);
-        return new InlinePlain(capturing[0]);
+        return new InlinePlain(unescapeBackSlash(capturing[0]));
     };
 }
 
@@ -405,7 +425,7 @@ export class LinkOrImageRule implements Rule {
     readonly description: string = "Standard Markdown Inline Rule";
 
     public readonly regex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\(\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*\)/;
-    public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\[((?:\\]|[^\]])*)]/;
+    public readonly refRegex: RegExp = /^(!?)\[((?:\[[^\]]*]|[^\[\]]|](?=[^\[]*]))*)]\[((?:\\\\|\\]|[^\]])*)]/;
     public readonly autoLinkRegex: RegExp =
         /^<(?:(?:mailto|MAILTO):([\w.!#$%&'*+\/=?^`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)|([a-zA-Z][a-zA-Z\d+.-]{1,31}:[^<>\s]*))>/;
 
@@ -421,9 +441,9 @@ export class LinkOrImageRule implements Rule {
         forwardRegexp(s, capturing);
         if (capturing[1] !== '') {
 
-            return new ImageLink(capturing[2], capturing[3], true, capturing[4]);
+            return new ImageLink(unescapeBackSlash(capturing[2]), capturing[3], true, capturing[4]);
         } else {
-            return new Link(capturing[2], capturing[3], true, capturing[4]);
+            return new Link(unescapeBackSlash(capturing[2]), capturing[3], true, capturing[4]);
         }
     }
 
@@ -458,7 +478,7 @@ export class EmphasisRule implements Rule {
     readonly name: string = "Standard/Inline/Emphasis";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:(_{1,2})((?:\\_|[^_])+)(_{1,2})|(\*{1,2})((?:\\\*|[^*])+)(\*{1,2}))/;
+    public readonly regex: RegExp = /^(?:(_{1,2})((?:\\\\|\\_|[^_])+)(_{1,2})|(\*{1,2})((?:\\\\|\\\*|[^*])+)(\*{1,2}))/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -470,13 +490,13 @@ export class EmphasisRule implements Rule {
         if (l !== r) {
             if (l.length < r.length) {
                 s.forward(capturing[0].length - 1);
-                return new Emphasis(capturing[2] || capturing[5], l.length);
+                return new Emphasis(unescapeBackSlash(capturing[2] || capturing[5]), l.length);
             }
             return undefined;
         }
 
         forwardRegexp(s, capturing);
-        return new Emphasis(capturing[2] || capturing[5], l.length);
+        return new Emphasis(unescapeBackSlash(capturing[2] || capturing[5]), l.length);
     };
 }
 
@@ -484,7 +504,7 @@ export class InlineCodeRule implements Rule {
     readonly name: string = "Standard/Inline/InlineCode";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:``([^`\n\r\u2028\u2029](?:\\`|`?[^`\n\r\u2028\u2029])*)``|`((?:\\`|[^`\n\r\u2028\u2029])+)`)/;
+    public readonly regex: RegExp = /^(?:``([^`\n\r\u2028\u2029](?:\\\\|\\`|`?[^`\n\r\u2028\u2029])*)``|`((?:\\\\|\\`|[^`\n\r\u2028\u2029])+)`)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -493,6 +513,6 @@ export class InlineCodeRule implements Rule {
         }
 
         forwardRegexp(s, capturing);
-        return new InlineCode((capturing[1] || capturing[2]).replace(/\\`/g, "`"));
+        return new InlineCode(unescapeBackSlash(capturing[1] || capturing[2]));
     };
 }
