@@ -19,6 +19,7 @@ import {
     TokenType
 } from "../token/token";
 import {commandFunc, LaTeXParser, texCommands, TexContext} from "../parser/tex-parser";
+import {escapeHTML} from "../lib/escape";
 
 export type HighlightFunc = (code: string, language: string) => string;
 
@@ -40,12 +41,6 @@ export interface RenderOptions {
     wrapCodeClassTag?: (language: string) => string,
     highlight?: HighlightFunc,
     enableLaTeX?: boolean,
-}
-
-function escape(s: string) {
-    return s.replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
 }
 
 export class Renderer {
@@ -229,8 +224,8 @@ export class Renderer {
         }
 
         ctx.html += '<pre><code' +
-            (codeBlock.language ? (' class="' + this.wrapCodeClassTag(codeBlock.language) + '"') : '') + '>' +
-            escape((<CodeBlock>(el)).body) + '</code></pre>';
+            (codeBlock.language ? (' class="' + escapeHTML(this.wrapCodeClassTag(codeBlock.language)) + '"') : '') + '>' +
+            escapeHTML((<CodeBlock>(el)).body) + '</code></pre>';
     }
 
     protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {
@@ -248,7 +243,7 @@ export class Renderer {
         ctx.texCtx.underMathEnv = false;
         ctx.html += this.enableLaTeX ?
             this.latexParser.tex(ctx.texCtx, new StringStream((<InlinePlain>(el)).content)) :
-            (<InlinePlain>(el)).content;
+            escapeHTML((<InlinePlain>(el)).content);
     }
 
     protected renderLink(ctx: RenderContext, el: BlockElement) {
@@ -262,12 +257,12 @@ export class Renderer {
 
         ctx.html += '<a href="' + link.link + '"';
         if (link.title) {
-            ctx.html += ' title="' + link.title + '"';
+            ctx.html += ' title="' + escapeHTML(link.title) + '"';
         }
         ctx.texCtx.underMathEnv = false;
         ctx.html += '>' + (
-            this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(link.linkTitle)) :
-                link.linkTitle) + '</a>';
+            (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(link.linkTitle)) :
+                escapeHTML(link.linkTitle))) + '</a>';
     }
 
     protected renderImageLink(ctx: RenderContext, el: BlockElement) {
@@ -279,8 +274,8 @@ export class Renderer {
             }
         }
 
-        ctx.html += '<img src="' + link.link + '"' + '" alt="' + link.linkTitle + '"' +
-            (link.title ? ' title="' + link.title + '"' : '') +
+        ctx.html += '<img src="' + link.link + '"' + '" alt="' + escapeHTML(link.linkTitle) + '"' +
+            (link.title ? ' title="' + escapeHTML(link.title) + '"' : '') +
             "/>";
     }
 
@@ -301,14 +296,14 @@ export class Renderer {
     protected renderEmphasis(ctx: RenderContext, el: BlockElement) {
         let emphasisEl: Emphasis = <Emphasis>el;
         ctx.texCtx.underMathEnv = false;
-        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') + (
-                this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(emphasisEl.content)) :
-                    emphasisEl.content) +
+        ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') +
+            (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(emphasisEl.content)) :
+                escapeHTML(emphasisEl.content)) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
 
     protected renderInlineCode(ctx: RenderContext, el: BlockElement) {
-        ctx.html += '<code>' + escape((<InlineCode>el).content) + '</code>';
+        ctx.html += '<code>' + escapeHTML((<InlineCode>el).content) + '</code>';
     }
 }
 
