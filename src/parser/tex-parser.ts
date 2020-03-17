@@ -1,4 +1,5 @@
 import {StringStream} from "..";
+import {escapeHTML} from "../lib/escape";
 
 export enum BraceType {
     // {}
@@ -215,7 +216,8 @@ export const texCommands: { [commandName: string]: commandFunc } = {
         if (!expectTheOnlyBrace(vars, traceInvalidCommand('url', ctx))) {
             return '';
         }
-        return '<a href="' + vars[0].text + '">' + vars[0].text + '</a>' +
+        let t = escapeHTML(vars[0].text);
+        return '<a href="' + t + '">' + t + '</a>' +
             tex(ctx, new StringStream(releaseVars(vars, 1)));
     },
     section(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
@@ -302,8 +304,34 @@ export class LaTeXParser {
 
     public static readonly cmdNameRegex = /\\([a-zA-Z_]\w*)/;
 
-
     tex(ctx: TexContext, s: StringStream): string {
+        if (ctx.underMathEnv) {
+            return this.texMath(ctx, s)
+        }
+        let markdownText: string = '', matched: string;
+        while (!s.eof) {
+            let capturing = LaTeXParser.cmdNameRegex.exec(s.source);
+            if (capturing === null) {
+                return markdownText + escapeHTML(s.source);
+            }
+            matched = capturing[0];
+            let cmdName = capturing[1];
+            let cmd: commandFunc | undefined = ctx.texCommandDefs[cmdName] || ctx.texCommands[cmdName];
+            if (cmd) {
+                markdownText += escapeHTML(s.source.slice(0, capturing.index));
+                s.forward(capturing.index + capturing[0].length);
+                let vars: TexCmdVar[] = braceMatch(s);
+
+                markdownText += cmd(ctx, vars, this.tex);
+            } else {
+                markdownText += escapeHTML(s.source.slice(0, capturing.index + capturing[0].length));
+                s.forward(capturing.index + capturing[0].length);
+            }
+        }
+        return markdownText;
+    }
+
+    texMath(ctx: TexContext, s: StringStream): string {
         let markdownText: string = '', matched: string;
         while (!s.eof) {
             let capturing = LaTeXParser.cmdNameRegex.exec(s.source);
@@ -318,7 +346,7 @@ export class LaTeXParser {
                 s.forward(capturing.index + capturing[0].length);
                 let vars: TexCmdVar[] = braceMatch(s);
 
-                markdownText += cmd(ctx, vars, this.tex);
+                markdownText += cmd(ctx, vars, this.texMath);
             } else {
                 markdownText += s.source.slice(0, capturing.index + capturing[0].length);
                 s.forward(capturing.index + capturing[0].length);

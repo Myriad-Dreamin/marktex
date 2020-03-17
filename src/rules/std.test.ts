@@ -3,6 +3,7 @@ import {
     EmphasisRule,
     HeaderBlockRule,
     HorizontalRule,
+    HTMLBlockRule,
     InlineCodeRule,
     InlinePlainExceptSpecialMarksRule,
     InlinePlainRule,
@@ -17,6 +18,7 @@ import {
     Emphasis,
     HeaderBlock,
     Horizontal,
+    HTMLBlock,
     ImageLink,
     InlineCode,
     InlinePlain,
@@ -88,12 +90,12 @@ describe("InlinePlainExceptSpecialMarksRule", () => {
     notMatch({text: "*"});
     notMatch({text: "_"});
     notMatch({text: "`"});
-    match({text: "   \\`", matchedLength: 5, expectedElement: new InlinePlain("   \\`")});
-    match({text: "ggg\\<", matchedLength: 5, expectedElement: new InlinePlain("ggg\\<")});
-    match({text: "ggg\\[", matchedLength: 5, expectedElement: new InlinePlain("ggg\\[")});
-    match({text: "ggg\\*", matchedLength: 5, expectedElement: new InlinePlain("ggg\\*")});
-    match({text: "ggg\\_", matchedLength: 5, expectedElement: new InlinePlain("ggg\\_")});
-    match({text: "ggg\\`", matchedLength: 5, expectedElement: new InlinePlain("ggg\\`")});
+    match({text: "   \\`", matchedLength: 5, expectedElement: new InlinePlain("   `")});
+    match({text: "ggg\\<", matchedLength: 3, expectedElement: new InlinePlain("ggg")});
+    match({text: "ggg\\[", matchedLength: 5, expectedElement: new InlinePlain("ggg[")});
+    match({text: "ggg\\*", matchedLength: 5, expectedElement: new InlinePlain("ggg*")});
+    match({text: "ggg\\_", matchedLength: 5, expectedElement: new InlinePlain("ggg_")});
+    match({text: "ggg\\`", matchedLength: 5, expectedElement: new InlinePlain("ggg`")});
 
 });
 
@@ -548,8 +550,86 @@ describe("ListBlockRule", () => {
 });
 
 describe("HTMLBlockRule", () => {
-    // let rule: HTMLBlockRule = new HTMLBlockRule();
-    // let match: elementMatcher = itWillMatchElement(rule);
-    // let notMatch: elementNotMatcher = itWillNotMatchElement(rule);
+    let rule: HTMLBlockRule = new HTMLBlockRule();
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
+    match({
+        text: "<a/>",
+        matchedLength: "<a/>".length,
+        expectedElement: new HTMLBlock("<a/>"),
+    });
+    match({
+        text: "<a/>\n",
+        matchedLength: "<a/>".length,
+        expectedElement: new HTMLBlock("<a/>"),
+    });
+    match({
+        text: "<a>",
+        matchedLength: "<a>".length,
+        expectedElement: new HTMLBlock("<a>"),
+    });
+    match({
+        text: "<a>\n",
+        matchedLength: "<a>\n".length,
+        expectedElement: new HTMLBlock("<a>\n"),
+    });
+    match({
+        text: "<a>\nb",
+        matchedLength: "<a>\nb".length,
+        expectedElement: new HTMLBlock("<a>\nb"),
+    });
+    match({
+        text: "<a>\nb\n\nc",
+        matchedLength: "<a>\nb".length,
+        expectedElement: new HTMLBlock("<a>\nb"),
+    });
+    match({
+        text: "<a>\n\n",
+        matchedLength: "<a>".length,
+        expectedElement: new HTMLBlock("<a>"),
+    });
 
+
+//<agq/>
+// <agq gg/>
+// <agq gg  gg/>
+// <agq gg= gg/>
+// <ag gg="" g/>
+// <bb g='' g/>
+// <a
+// >
+// <a>
+// <bab>
+// <c2c>
+// <a/>
+// <b2/>
+// <a  />
+// <b2
+// data="foo" >
+// <a foo="bar" bam = 'baz <em>"</em>'
+// _boolean zoop:33=zoop:33 />
+// <responsive-image src="foo.jpg" />
+//
+// <33>
+// <__>
+// <a h*#ref="hi">
+// <a href="hi'>
+// <a href=hi'>
+// < a>
+// <
+// foo>
+// <bar/ >
+// <foo bar=baz
+// bim!bop />
+// <a href='bar'title=title>
+// <>
+// 如果a1
+// <a2>a3
+
+//    </qwqw   >
+// </ qwqw   >
+// </ qwq ="">
+// </qwq ="asdf">
+// </a_adf gg>
+// </a_adf>
 });
