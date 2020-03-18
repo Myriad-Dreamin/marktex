@@ -390,7 +390,7 @@ export class InlinePlainExceptSpecialMarksRule implements Rule {
     readonly name: string = "Standard/Inline/InlinePlainExceptSpecialMarks";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:\\[`_*\[$\\]|[^<`_*\[$\\])+/;
+    public readonly regex: RegExp = /^(?:\\[!`_*\[$\\]|[^<!`_*\[$\\])+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -407,7 +407,7 @@ export class InlinePlainRule implements Rule {
     readonly name: string = "Standard/Inline/InlinePlain";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:[<`_*\[$\\](?:\\[`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[`_*\[$\\]|[^<`_*\[$\\])+)/;
+    public readonly regex: RegExp = /^(?:[!`_*\[$\\](?:\\[!`_*\[$\\]|[^!`_*\[$\\])*|(?:\\[!`_*\[$\\]|[^!`_*\[$\\])+)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
