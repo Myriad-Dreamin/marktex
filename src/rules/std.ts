@@ -18,6 +18,7 @@ import {
     Paragraph,
     Quotes
 } from "../token/token";
+import {unescapeBackSlash} from "../lib/escape";
 
 
 // Standard Markdown Rules
@@ -39,24 +40,6 @@ import {
 //     Code
 //
 
-function unescapeBackSlash(s: string): string {
-    return s
-        .replace(/\\\\/g, "\\")
-        .replace(/\\`/g, "`")
-        .replace(/\\\*/g, "*")
-        .replace(/\\_/g, "_")
-        .replace(/\\{/g, "{")
-        .replace(/\\}/g, "}")
-        .replace(/\\\[/g, "[")
-        .replace(/\\]/g, "]")
-        .replace(/\\\(/g, "(")
-        .replace(/\\\)/g, ")")
-        .replace(/\\#/g, "#")
-        .replace(/\\\+/g, "+")
-        .replace(/\\-/g, "-")
-        .replace(/\\\./g, ".")
-        .replace(/\\!/g, "!");
-}
 
 export class NewLineRule implements Rule {
     readonly name: string = "Standard/Block/NewLine";
@@ -390,7 +373,7 @@ export class InlinePlainExceptSpecialMarksRule implements Rule {
     readonly name: string = "Standard/Inline/InlinePlainExceptSpecialMarks";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:\\[`_*\[$\\]|[^<`_*\[$\\])+/;
+    public readonly regex: RegExp = /^(?:\\[!`_*\[$\\]|[^<!`_*\[$\\])+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -407,7 +390,7 @@ export class InlinePlainRule implements Rule {
     readonly name: string = "Standard/Inline/InlinePlain";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:[<`_*\[$\\](?:\\[`_*\[$\\]|[^<`_*\[$\\])*|(?:\\[`_*\[$\\]|[^<`_*\[$\\])+)/;
+    public readonly regex: RegExp = /^(?:[!`_*\[$\\<](?:\\[!`_*\[$\\]|[^<!`_*\[$\\])*|(?:\\[!`_*\[$\\]|[^<!`_*\[$\\])+)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
