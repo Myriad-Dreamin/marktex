@@ -5,3 +5,4 @@ src
 dist/*/**.test.ts
 dist/*/**.bench.ts
 a.html
+dist/*/**.js~build
