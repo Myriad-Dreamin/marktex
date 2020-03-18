@@ -1,0 +1,6 @@
+.idea/
+**.log
+node_modules/
+src
+dist/*/**.test.ts
+dist/*/**.bench.ts
