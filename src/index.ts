@@ -1,20 +1,15 @@
-import {Parser} from "./parser/parser";
-import {HighlightFunc, Renderer, RenderMiddleware} from "./renderer/renderer";
+import {Parser, ParserOptions} from "./parser/parser";
+import {HighlightFunc, Renderer, RenderMiddleware, RenderOptions} from "./renderer/renderer";
 import {StringStream} from "./lib/stream";
 import {newBlockRules, newInlineRules, newRules} from "./rules";
 import {HTMLBlockOptions} from "./rules/std";
 
-export interface MarkTeXParserOptions {
+interface Options {
     enableLaTeX?: boolean;
     enableGFMRules?: boolean;
 
     enableHtml?: boolean;
     HTMLBlockOptions?: HTMLBlockOptions;
-}
-
-
-export interface MarkTeXRendererOptions extends MarkTeXParserOptions {
-    parser?: Parser
 
     highlight?: HighlightFunc;
     wrapCodeClassTag?: (language: string) => string;
@@ -31,11 +26,11 @@ export interface MarkTeXRendererOptions extends MarkTeXParserOptions {
 // noinspection JSUnusedGlobalSymbols
 const myriad = {
     author: "Myriad-Dreamin",
-    newParser(options?: MarkTeXParserOptions): Parser {
+    newParser(options?: Options): Parser {
         return new Parser(newRules(options));
     },
-    newRenderer(options?: MarkTeXRendererOptions): Renderer {
-        return new Renderer(options?.parser || myriad.newParser(options), options);
+    newRenderer(options?: Options): Renderer {
+        return new Renderer(myriad.newParser(options), options);
     },
     newStringStream(str: string): StringStream {
         return new StringStream(str);
@@ -47,4 +42,4 @@ const myriad = {
 
 // noinspection JSUnusedGlobalSymbols
 export default myriad;
-export {myriad, Parser, Renderer, StringStream};
+export {myriad, Options, Parser, Renderer, StringStream};
