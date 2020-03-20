@@ -1,6 +1,6 @@
 {
   "name": "marktex.js",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "description": "markdown parser",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,6 +8,7 @@
     "build": "tsc",
     "main": "node dist/index.js",
     "exec": "tsc && node dist/index.js",
+    "prepublish": "yarn run build",
     "t": "./node_modules/.bin/mocha.cmd --reporter spec --require ts-node/register",
     "b": "./node_modules/.bin/mocha.cmd --prof --reporter spec --require ts-node/register",
     "bench": "yarn run b src/**/*.bench.ts",

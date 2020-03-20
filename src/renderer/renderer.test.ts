@@ -34,6 +34,25 @@ describe('renderer', () => {
         ));
     });
 
+    it('should render code block with highlight callback', () => {
+        console.log(new Renderer(new Parser(newRules({enableLaTeX: true})), {
+            enableLaTeX: true,
+            highlight: (code, language) => {
+                if (language) {
+                    return '<div class="rendered">' + code + '</div>'
+                } else {
+                    return code
+                }
+            }
+        }).render(
+            new StringStream('```html\n' +
+                '<div class="footer">\n' +
+                '    &copy; 2004 Foo Corporation\n' +
+                '</div>\n' +
+                '```'),
+        ));
+    });
+
 });
 
 

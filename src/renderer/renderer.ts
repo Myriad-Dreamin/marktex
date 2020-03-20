@@ -55,9 +55,6 @@ export class Renderer {
     public constructor(parser: Parser, opts?: RenderOptions) {
         this.parser = parser;
         this.stack = opts?.originStack || [this.createLinkMap, this.handleElements];
-        this.highlight = function (code: string, _: string): string {
-            return code;
-        };
         if (opts) {
             this.highlight = opts.highlight;
             this.enableLaTeX = opts.enableLaTeX;
@@ -219,13 +216,15 @@ export class Renderer {
 
     protected renderCodeBlock(ctx: RenderContext, el: BlockElement) {
         let codeBlock: CodeBlock = <CodeBlock>(el);
-        if (codeBlock.language && this.highlight) {
-            codeBlock.body = this.highlight(codeBlock.body, codeBlock.language);
+        if (this.highlight) {
+            codeBlock.body = this.highlight(codeBlock.body, codeBlock.language || '');
+        } else {
+            codeBlock.body = escapeHTML(codeBlock.body);
         }
 
         ctx.html += '<pre><code' +
             (codeBlock.language ? (' class="' + escapeHTML(this.wrapCodeClassTag(codeBlock.language)) + '"') : '') + '>' +
-            escapeHTML((<CodeBlock>(el)).body) + '</code></pre>';
+            codeBlock.body + '</code></pre>';
     }
 
     protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {

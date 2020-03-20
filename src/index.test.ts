@@ -15,6 +15,12 @@ describe('renderer', () => {
     });
     it('can render by default parser option', () => {
         console.log((new myriad.Renderer(myriad.newParser())).renderString('## hello marktex.js'))
+    });
+
+    it('can render by default parser option', () => {
+        let _  = myriad.newRenderer({enableLaTeX: true});
+
+        console.log(_.renderString('## hello marktex.js'))
     })
 });
 
