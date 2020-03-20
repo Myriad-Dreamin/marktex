@@ -300,8 +300,8 @@ export class HTMLBlockRule implements Rule {
     protected readonly others: RegExp;
     protected readonly safeHTMLTagFilter?: (tag: string) => boolean;
 
-    constructor(validTags?: HTMLBlockOptions) {
-        let v = Object.assign(validTags || {}, defaultValidTags());
+    constructor(options?: HTMLBlockOptions) {
+        let v = Object.assign(options || {}, defaultValidTags());
         this.open_tag = v.open_tag;
         this.close_tag = v.close_tag;
         this.others = v.others;
