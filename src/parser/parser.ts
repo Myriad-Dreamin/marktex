@@ -60,6 +60,6 @@ export class Parser {
             }
         }
 
-        throw new Error("no rule match the stream at pos " + source.pos);
+        throw source.wrapErr(new Error('no rule match the stream'));
     }
 }

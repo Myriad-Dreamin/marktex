@@ -226,7 +226,7 @@ export class ListBlockRule implements Rule {
             do {
                 let capturing = ListBlockRule.listBlockRegex.exec(s.source);
                 if (capturing === null) {
-                    throw new Error("match block failed");
+                    throw s.wrapErr(new Error("match block failed"));
                 }
                 forwardRegexp(s, capturing);
                 blockContent += capturing[0];
