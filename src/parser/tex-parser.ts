@@ -112,8 +112,7 @@ function releaseVars(vars: TexCmdVar[], n: number) {
 }
 
 let replaceRegex: RegExp[] = [
-    /(?<!\\)#1/g, /(?<!\\)#2/g, /(?<!\\)#3/g, /(?<!\\)#4/g,
-    /(?<!\\)#5/g, /(?<!\\)#6/g, /(?<!\\)#7/g, /(?<!\\)#8/g, /(?<!\\)#9/g,
+    /#1/g, /#2/g, /#3/g, /#4/g, /#5/g, /#6/g, /#7/g, /#8/g, /#9/g,
 ];
 
 // noinspection JSUnusedGlobalSymbols,SpellCheckingInspection

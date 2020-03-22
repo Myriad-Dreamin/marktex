@@ -14,12 +14,12 @@ export interface MarkTeXParserOptions {
 
 
 export interface MarkTeXRendererOptions extends MarkTeXParserOptions {
-    parser?: Parser
+    parser?: Parser;
 
     highlight?: HighlightFunc;
     wrapCodeClassTag?: (language: string) => string;
 
-    originStack?: RenderMiddleware[],
+    originStack?: RenderMiddleware[];
 }
 
 //
