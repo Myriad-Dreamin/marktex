@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
     "moduleResolution": "node",
-    "target": "ES2018",
+    "target": "es2015",
     "outDir": "./dist/",
     "noImplicitAny": true,
     "preserveConstEnums": false,
@@ -14,7 +13,8 @@
     "node_modules",
     "src/**/*.test.ts",
     "src/**/*.bench.ts",
-    "dist"
+    "dist",
+    "src/lib/test_util.ts"
   ],
   "include": [
     "src"
