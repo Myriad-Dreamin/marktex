@@ -14,12 +14,14 @@ module.exports = {
             {
                 test: /\.ts$/,
                 use: ["babel-loader", "ts-loader"],
+
                 exclude: [path.resolve(__dirname, "node_modules")]
             }
         ]
     },
     resolve: {
         extensions: [".ts", ".js"]
-    }
+    },
+
     // devtool: "inline-source-map"
 };

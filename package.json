@@ -5,8 +5,10 @@
   "main": "dist/marktex.js",
   "scripts": {
     "build": "webpack",
+    "build-es5": "webpack --config webpack.es5.js",
     "build-min": "webpack --config webpack.min.js",
-    "prepublish": "yarn run build && yarn run build-min",
+    "build-es5-min": "webpack --config webpack.es5.min.js",
+    "prepublish": "yarn run build && yarn run build-min && yarn run build-es5 && yarn run build-es5-min",
     "t": "./node_modules/.bin/mocha.cmd --reporter spec --require ts-node/register",
     "b": "./node_modules/.bin/mocha.cmd --prof --reporter spec --require ts-node/register",
     "bench": "yarn run b src/**/*.bench.ts",
@@ -17,6 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.9.0",
+    "@babel/plugin-transform-classes": "^7.9.2",
     "@babel/preset-env": "^7.9.0",
     "@types/benchmark": "^1.0.31",
     "@types/chai": "^4.2.10",
