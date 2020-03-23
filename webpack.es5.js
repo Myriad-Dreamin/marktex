@@ -14,7 +14,7 @@ const babelLoader = {
 let pathRegex = /node_modules\/(?!(marktex.js)\/).*/;
 module.exports = {
     mode: "development",
-    entry: "./node_modules/marktex.js/dist",
+    entry: "./src/index.es5.js",
     output: {
         path: path.resolve(__dirname, "dist"),
         filename: "marktex.es5.js",

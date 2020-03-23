@@ -25,14 +25,89 @@
         window.MathJax.Hub.Queue(['Typeset', window.MathJax.Hub]);
 
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/marktex-bundle@0.3.5/dist/marktex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marktex-bundle@0.3.5-2/dist/marktex.es5.js"></script>
 </head>
 <body>
     <div id="app"></div>
 </body>
 <script>
     window.onload = function () {
-        document.getElementById("app").innerHTML = marktex.myriad.newRenderer().renderString("## hello marktex");
+        document.getElementById("app").innerHTML = marktex.myriad.newRenderer({
+            enableLaTeX: true,
+        }).renderString('' +
+            '\\newcommand{\\brc}[1]{\\left({#1}\\right)}\n' +
+            '\\newcommand{\\brm}[1]{\\left[{#1}\\right]}\n' +
+            '\\newcommand{\\brv}[1]{\\left|{#1}\\right|}\n' +
+            '\\newcommand{\\brf}[1]{\\left\\{{#1}\\right\\}}\n' +
+            '\\newcommand{\\brt}[1]{\\left\\Vert{#1}\\right\\Vert}\n' +
+            '\\newcommand{\\brg}[1]{\\left<{#1}\\right>}\n' +
+            '\\newcommand{\\floor}[1]{\\lfloor{#1}\\rfloor}\n' +
+            '\\newcommand{\\ceil}[1]{\\lceil{#1}\\rceil}\n' +
+            '\\newcommand{\\fira}[1]{{\\firacode #1}}\n' +
+            '\\newcommand{\\ds}{\\displaystyle}\n' +
+            '\\newcommand{\\pt}{\\partial}\n' +
+            '\\newcommand{\\rint}[2]{\\Big|^{#1}_{#2}}\n' +
+            '\\newcommand{\\leg}{\\left\\lgroup}\n' +
+            '\\newcommand{\\rig}{\\right\\rgroup}\n' +
+            '\\newcommand{\\de}{\\mathrm{d}}\n' +
+            '\\newcommand{\\im}{\\mathrm{im}}\n' +
+            '\\newcommand{\\ord}{\\mathrm{ord}}\n' +
+            '\\newcommand{\\cov}{\\mathrm{Cov}}\n' +
+            '\\newcommand{\\lub}{\\mathrm{LUB}}\n' +
+            '\\newcommand{\\glb}{\\mathrm{GLB}}\n' +
+            '\\newcommand{\\var}{\\mathrm{Var}}\n' +
+            '\\newcommand{\\aut}{\\mathrm{Aut}}\n' +
+            '\\newcommand{\\sylow}{\\mathrm{Sylow}}\n' +
+            '\\newcommand{\\xhi}{\\mathcal{X}}\n' +
+            '\\newcommand{\\po}{\\mathcal{P}}\n' +
+            '\\newcommand{\\bi}{\\mathrm{b}}\n' +
+            '\\newcommand{\\rfl}{\\mathcal{R}}\n' +
+            '\\newcommand{\\gro}{\\mathrm{O}}\n' +
+            '\\newcommand{\\hfindent}{\\hspace*{1em}}' +
+            '' +
+            '\\subsection{约定}\n' +
+            '\\subsubsection{数组和数组的长度}\n' +
+            '$A[1...n]=[A[1]...A[n]](n>=1)$总是表示一个数组,$len[A]=n$总是表示一个数组的长度.\n' +
+            '\\subsubsection{数组切片}\n' +
+            '若$A[l...r]$出现$l>r$,则$A[l...r]=\\varnothing$,否则$A[l...r]=[A[l],\\dots,A[r]]$.\n' +
+            '\\subsubsection{时间复杂度表示}\n' +
+            '我们用$T(n)$表示某一次特定的数据集$\\mathcal{S}$该算法的时间复杂度,如无指定,则$T(n)$表示一般情况的时间复杂度.\n' +
+            '\\subsubsection{对数表示}\n' +
+            '$\\log n:=\\log_2 n,\\lg n := \\log_{10} n, \\ln n := \\log_{e}n$.\n' +
+            '\\subsubsection{测试环境}\n' +
+            'CPU主频3.2GHz,程序限制使用10\\%的CPU资源.内存16G,测试系统为windows10x64.\n' +
+            '\\subsubsection{源代码}\n' +
+            'GitHub:\\url{https://github.com/Myriad-Dreamin/Sort-Comparsion}\n' +
+            '\\section{插入排序 $\\mathrm{InsertionSort}$}\n' +
+            '对于$[1...i](i\\leqslant n)$将$A[i]$从后往前依次挪动找到一个恰保证有序的位置，视为结束一次插入.\n' +
+            '\\subsection{正确性}\n' +
+            '采用数学归纳法.\n' +
+            '\\indent\n' +
+            '假设:\n' +
+            '\\indent\n' +
+            '定义$\\mathrm{Insert}(x,A[l...r])$为插入操作,它不破坏$A[l...r]$之间的相对关系,并将$A[l...r]$分为$A_{lo}=A[l...x-1],A[x],A_{hi}=A[x+1...r]$,满足$\\forall y\\in A_{lo}, y<A[x], \\forall y\\in A_{hi}, A[x] < y$,这时$A\' = [A[l...x-1], A[x],A[x+1...r]]$为有序的.\n' +
+            '\\subsection{算法复杂度}\n' +
+            '该排序为原地排序.\n' +
+            '\\indent\n' +
+            '当我们朴素地按照定义实现$\\mathrm{Insert}$时.它的复杂度是$\\Omega(1),\\gro(n)$的,那么:\n' +
+            '\\indent\n' +
+            '空间复杂度为$\\Theta(1)$,时间复杂度为$\\Omega(n),\\gro(n^2)$.\n' +
+            '\\subsubsection{最好情况举例}\n' +
+            '\\indent\n' +
+            '设$A[1...n]= [1,2,...,n]$,有每次$\\mathrm{Insert}$的复杂度为$\\Theta(1)$,因此$T(n)=n\\Theta(1)=\\Theta(n)$.\n' +
+            '\\subsubsection{最差情况举例}\n' +
+            '\\indent\n' +
+            '设$A[1...n]= [n,n-1,...,1]$,有每次$\\mathrm{Insert}$的复杂度为$\\Theta(i)(1\\leqslant i \\leqslant n)$,因此:$$\n' +
+            '    T(n)=\\sum_{i=1}^{n}\\Theta(i)=\\Theta(n^2).\n' +
+            '$$\n' +
+            '\\indent\n' +
+            '\\subsubsection{平均情况}\n' +
+            '\\indent\n' +
+            '设$A[1...n]$为随机数据.那么$\\mathrm{Insert}$的移动期望为$O(\\dfrac{i}{2})=O(i)(1\\leqslant i \\leqslant n)$.\n' +
+            '从而估计的平均时间复杂度为:\n' +
+            '$$\n' +
+            'T(n)=\\sum_{i=1}^{n}\\gro(i)=\\gro(n^2).\n' +
+            '$$\n');
     }
 </script>
 </html>
