@@ -201,10 +201,16 @@ export class LinkDefinitionRule implements Rule {
 export class ListBlockRule implements Rule {
     readonly name: string = "Standard/Block/ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
-    public static readonly blankRegex = /^[\t\v\f ]*\n/;
+    public static readonly gfmSelectorRule = /^\s{0,3}\[([ x])]\s*/;
     //^((?:[^\n]+(?:\n|$)(?=[^0-9*+-])(\n(?=[^0-9*+-]))?)+)
     public static readonly listBlockRegex = /^(?:(?:[^\n]*)(?:\n|$)\n?)(?:(?=[^0-9*+-])(?:[^\n]+)(?:\n|$)\n?)*/;
     public static readonly replaceRegex = /^(?: {4}|\t)/gm;
+    private readonly enableGFMRules: boolean;
+
+    constructor({enableGFMRules}: { enableGFMRules?: boolean }) {
+        this.enableGFMRules = enableGFMRules || false;
+    }
+
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let ordered: boolean;
@@ -215,10 +221,10 @@ export class ListBlockRule implements Rule {
         } else {
             return undefined;
         }
-        return ListBlockRule.matchBlock(new ListBlock(ordered), s, ctx);
+        return this.matchBlock(new ListBlock(ordered), s, ctx);
     };
 
-    private static matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
+    private matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
         let nextMarker: string | undefined;
         nextMarker = l.lookAhead(s);
         if (!nextMarker) {
@@ -245,24 +251,24 @@ export class ListBlockRule implements Rule {
                 blockContent = blockContent.slice(0, blockContent.length - 2);
             }
 
+            let sub = new StringStream(blockContent);
+            let selector = undefined;
+            if (this.enableGFMRules) {
+                let capturing = ListBlockRule.gfmSelectorRule.exec(sub.source);
+                if (capturing !== null && capturing[0].length != sub.source.length) {
+                    forwardRegexp(sub, capturing);
+                    selector = capturing[1];
+                }
+            }
+
             let element = new ListElement(marker, ctx.parseBlockElements(
-                new StringStream(blockContent),
-            ));
-            element.blankSeparated = sep || lastSeparated;
+                sub,
+            ), sep || lastSeparated, selector);
             l.listElements.push(element);
 
             lastSeparated = sep;
 
             if (!nextMarker) {
-                // let capturing = ListBlockRule.blankRegex.exec(s.source);
-                // if (capturing !== null) {
-                //     forwardRegexp(s, capturing);
-                //     element.blankSeparated = true;
-                //     lastSeparated = true;
-                // } else {
-                //     element.blankSeparated = lastSeparated;
-                //     lastSeparated = false;
-                // }
                 if (l.lookAhead0(s)) {
                     nextMarker = l.lookAhead(s);
                 }

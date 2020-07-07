@@ -54,7 +54,7 @@ export function newBlockRules(
         new QuotesRule(),
         new HeaderBlockRule(),
         new HorizontalRule(),
-        new ListBlockRule(),
+        new ListBlockRule({enableGFMRules: opts?.enableGFMRules}),
     ];
 
     let rules2: Rule[] = [
