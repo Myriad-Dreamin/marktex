@@ -263,6 +263,7 @@ class ListBlock implements BlockElement {
     }
 
     public lookAhead0(s: StringStream): boolean {
+        if (s.eof) return false;
         if (this.ordered) {
             return '0' <= s.source[0] && s.source[0] <= '9'
         } else if ('*+-'.includes(s.source[0])) {
