@@ -1,6 +1,6 @@
 {
   "name": "marktex.js",
-  "version": "0.3.4",
+  "version": "0.3.7",
   "description": "markdown parser",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
