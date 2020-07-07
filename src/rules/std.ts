@@ -64,6 +64,10 @@ export class ParagraphRule implements Rule {
 
     // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
 
+    constructor({otherBlockBegin = []}: { otherBlockBegin: string[] }) {
+
+    }
+
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let lastChar: string = 'a', i = 0;
         if (s.source[0] == '\n') {
@@ -197,9 +201,16 @@ export class LinkDefinitionRule implements Rule {
 export class ListBlockRule implements Rule {
     readonly name: string = "Standard/Block/ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
-    public static readonly blankRegex = /^[\t\v\f ]*\n/;
-    public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:\n(?: {4}|\t))?(?:(?=[^0-9*+-])[^\n]+(?:\n|$)(?:\n(?: {4}|\t))?)*)/;
+    public static readonly gfmSelectorRule = /^\s{0,3}\[([ x])]\s*/;
+    //^((?:[^\n]+(?:\n|$)(?=[^0-9*+-])(\n(?=[^0-9*+-]))?)+)
+    public static readonly listBlockRegex = /^(?:(?:[^\n]*)(?:\n|$)\n?)(?:(?=[^0-9*+-])(?:[^\n]+)(?:\n|$)\n?)*/;
     public static readonly replaceRegex = /^(?: {4}|\t)/gm;
+    private readonly enableGFMRules: boolean;
+
+    constructor({enableGFMRules}: { enableGFMRules?: boolean }) {
+        this.enableGFMRules = enableGFMRules || false;
+    }
+
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let ordered: boolean;
@@ -210,10 +221,10 @@ export class ListBlockRule implements Rule {
         } else {
             return undefined;
         }
-        return ListBlockRule.matchBlock(new ListBlock(ordered), s, ctx);
+        return this.matchBlock(new ListBlock(ordered), s, ctx);
     };
 
-    private static matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
+    private matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
         let nextMarker: string | undefined;
         nextMarker = l.lookAhead(s);
         if (!nextMarker) {
@@ -230,25 +241,38 @@ export class ListBlockRule implements Rule {
                 }
                 forwardRegexp(s, capturing);
                 blockContent += capturing[0];
-            } while (l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
-            let element = new ListElement(marker, ctx.parseBlockElements(
-                new StringStream(blockContent.replace(ListBlockRule.replaceRegex, '')),
-            ));
-            if (!nextMarker) {
-                let capturing = ListBlockRule.blankRegex.exec(s.source);
-                if (capturing !== null) {
-                    forwardRegexp(s, capturing);
-                    element.blankSeparated = true;
-                    lastSeparated = true;
-                    if (l.lookAhead0(s)) {
-                        nextMarker = l.lookAhead(s);
-                    }
-                } else {
-                    element.blankSeparated = lastSeparated;
-                    lastSeparated = false;
+
+
+            } while (!s.eof && !l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
+
+            blockContent = blockContent.replace(ListBlockRule.replaceRegex, '');
+            let sep = blockContent.endsWith('\n\n');
+            if (sep) {
+                blockContent = blockContent.slice(0, blockContent.length - 2);
+            }
+
+            let sub = new StringStream(blockContent);
+            let selector = undefined;
+            if (this.enableGFMRules) {
+                let capturing = ListBlockRule.gfmSelectorRule.exec(sub.source);
+                if (capturing !== null && capturing[0].length != sub.source.length) {
+                    forwardRegexp(sub, capturing);
+                    selector = capturing[1];
                 }
             }
+
+            let element = new ListElement(marker, ctx.parseBlockElements(
+                sub,
+            ), sep || lastSeparated, selector);
             l.listElements.push(element);
+
+            lastSeparated = sep;
+
+            if (!nextMarker) {
+                if (l.lookAhead0(s)) {
+                    nextMarker = l.lookAhead(s);
+                }
+            }
         }
         return l;
     }
