@@ -499,7 +499,7 @@ describe("QuotesRule", () => {
 });
 
 describe("ListBlockRule", () => {
-    let rule: ListBlockRule = new ListBlockRule();
+    let rule: ListBlockRule = new ListBlockRule({});
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
@@ -572,6 +572,28 @@ describe("ListBlockRule", () => {
                 [new Paragraph([new InlinePlain('b')])]
             ),
         ]),
+    });
+});
+
+describe("GFMListBlockRule", () => {
+    let rule: ListBlockRule = new ListBlockRule({enableGFMRules: true});
+    let match: elementMatcher = itWillMatchElement(rule);
+    let notMatch: textAcceptor = itWillNotMatchElement(rule);
+
+    match({
+        text: "* [ ]",
+        matchedLength: "* [ ]".length,
+        expectedElement: new ListBlock(false,
+            [new ListElement('*',
+                [new Paragraph([new InlinePlain('[ ]')])])]),
+    });
+
+    match({
+        text: "* [ ] a",
+        matchedLength: "* [ ] a".length,
+        expectedElement: new ListBlock(false,
+            [new ListElement('*',
+                [new Paragraph([new InlinePlain('a')])], false, ' ')]),
     });
 });
 

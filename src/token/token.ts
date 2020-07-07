@@ -140,11 +140,13 @@ class ListElement {
     public marker: string;
     // is it good?
     public blankSeparated: boolean;
+    public selector?: string;
 
-    constructor(marker: string, innerBlocks: BlockElement[] = [], blankSeparated: boolean = false) {
+    constructor(marker: string, innerBlocks: BlockElement[] = [], blankSeparated: boolean = false, selector?: string) {
         this.marker = marker;
         this.innerBlocks = innerBlocks;
         this.blankSeparated = blankSeparated;
+        this.selector = selector;
     }
 }
 
