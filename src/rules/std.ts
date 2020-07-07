@@ -64,6 +64,10 @@ export class ParagraphRule implements Rule {
 
     // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
 
+    constructor({otherBlockBegin = []}: { otherBlockBegin: string[] }) {
+
+    }
+
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let lastChar: string = 'a', i = 0;
         if (s.source[0] == '\n') {
@@ -198,7 +202,8 @@ export class ListBlockRule implements Rule {
     readonly name: string = "Standard/Block/ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
     public static readonly blankRegex = /^[\t\v\f ]*\n/;
-    public static readonly listBlockRegex = /^([^\n]*(?:\n|$)(?:\n(?: {4}|\t))?(?:(?=[^0-9*+-])[^\n]+(?:\n|$)(?:\n(?: {4}|\t))?)*)/;
+    //^((?:[^\n]+(?:\n|$)(?=[^0-9*+-])(\n(?=[^0-9*+-]))?)+)
+    public static readonly listBlockRegex = /^(?:(?:[^\n]*)(?:\n|$)\n?)(?:(?=[^0-9*+-])(?:[^\n]+)(?:\n|$)\n?)*/;
     public static readonly replaceRegex = /^(?: {4}|\t)/gm;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
@@ -230,25 +235,38 @@ export class ListBlockRule implements Rule {
                 }
                 forwardRegexp(s, capturing);
                 blockContent += capturing[0];
-            } while (l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
+
+
+            } while (!s.eof && !l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
+
+            blockContent = blockContent.replace(ListBlockRule.replaceRegex, '');
+            let sep = blockContent.endsWith('\n\n');
+            if (sep) {
+                blockContent = blockContent.slice(0, blockContent.length - 2);
+            }
+
             let element = new ListElement(marker, ctx.parseBlockElements(
-                new StringStream(blockContent.replace(ListBlockRule.replaceRegex, '')),
+                new StringStream(blockContent),
             ));
+            element.blankSeparated = sep || lastSeparated;
+            l.listElements.push(element);
+
+            lastSeparated = sep;
+
             if (!nextMarker) {
-                let capturing = ListBlockRule.blankRegex.exec(s.source);
-                if (capturing !== null) {
-                    forwardRegexp(s, capturing);
-                    element.blankSeparated = true;
-                    lastSeparated = true;
-                    if (l.lookAhead0(s)) {
-                        nextMarker = l.lookAhead(s);
-                    }
-                } else {
-                    element.blankSeparated = lastSeparated;
-                    lastSeparated = false;
+                // let capturing = ListBlockRule.blankRegex.exec(s.source);
+                // if (capturing !== null) {
+                //     forwardRegexp(s, capturing);
+                //     element.blankSeparated = true;
+                //     lastSeparated = true;
+                // } else {
+                //     element.blankSeparated = lastSeparated;
+                //     lastSeparated = false;
+                // }
+                if (l.lookAhead0(s)) {
+                    nextMarker = l.lookAhead(s);
                 }
             }
-            l.listElements.push(element);
         }
         return l;
     }
