@@ -499,51 +499,9 @@ describe("QuotesRule", () => {
 });
 
 describe("ListBlockRule", () => {
-    let rule: ListBlockRule = new ListBlockRule({});
+    let rule: ListBlockRule = new ListBlockRule();
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: textAcceptor = itWillNotMatchElement(rule);
-    match({
-        text: "* a\n\n* b",
-        matchedLength: "* a\n\n* b".length,
-        expectedElement: new ListBlock(false, [
-            new ListElement(
-                '*',
-                [new Paragraph([new InlinePlain('a')])],
-                true,
-            ),
-            new ListElement(
-                '*',
-                [new Paragraph([new InlinePlain('b')])],
-                true,
-            ),
-        ]),
-    });
-    match({
-        text: "* 1\n1\n\n    + 1\n+ 1",
-        matchedLength: "* 1\n1\n\n    + 1\n+ 1".length,
-        expectedElement: new ListBlock(false, [
-            new ListElement(
-                '*',
-                [new Paragraph([new InlinePlain('1\n1')]),
-                    new NewLine('\n\n'),
-                    new ListBlock(false, [
-                        new ListElement(
-                            '+',
-                            [new Paragraph([new InlinePlain('1\n')])],
-                            false,
-                        ),
-                    ]),
-                ],
-
-                false,
-            ),
-            new ListElement(
-                '+',
-                [new Paragraph([new InlinePlain('1')])],
-                false,
-            ),
-        ]),
-    });
 
     match({
         text: "* ",
@@ -573,27 +531,21 @@ describe("ListBlockRule", () => {
             ),
         ]),
     });
-});
-
-describe("GFMListBlockRule", () => {
-    let rule: ListBlockRule = new ListBlockRule({enableGFMRules: true});
-    let match: elementMatcher = itWillMatchElement(rule);
-    let notMatch: textAcceptor = itWillNotMatchElement(rule);
-
     match({
-        text: "* [ ]",
-        matchedLength: "* [ ]".length,
-        expectedElement: new ListBlock(false,
-            [new ListElement('*',
-                [new Paragraph([new InlinePlain('[ ]')])])]),
-    });
-
-    match({
-        text: "* [ ] a",
-        matchedLength: "* [ ] a".length,
-        expectedElement: new ListBlock(false,
-            [new ListElement('*',
-                [new Paragraph([new InlinePlain('a')])], false, ' ')]),
+        text: "* a\n\n* b",
+        matchedLength: "* a\n\n* b".length,
+        expectedElement: new ListBlock(false, [
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('a\n')])],
+                true,
+            ),
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('b')])],
+                true,
+            ),
+        ]),
     });
 });
 
