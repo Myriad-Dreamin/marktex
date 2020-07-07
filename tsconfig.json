@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES2015",
     "outDir": "./dist/",
@@ -14,7 +15,7 @@
     "src/**/*.test.ts",
     "src/**/*.bench.ts",
     "src/lib/test_util.ts",
-    "dist",
+    "dist"
   ],
   "include": [
     "src"
