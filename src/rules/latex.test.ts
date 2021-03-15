@@ -3,7 +3,7 @@ import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor}
 import {Emphasis, InlinePlain, MathBlock, Paragraph} from "../token/token";
 
 describe("ParagraphRule", () => {
-    let rule: ParagraphRule = new ParagraphRule({skipLaTeXBlock: true, skipMathBlock: true});
+    let rule: ParagraphRule = new ParagraphRule();
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: textAcceptor = itWillNotMatchElement(rule);
     match({
@@ -71,9 +71,9 @@ describe("ParagraphRule", () => {
 
     match({
         text: "a\nqwq",
-        matchedLength: "a\nqwq".length,
+        matchedLength: "a".length,
         expectedElement: new Paragraph(
-            [new InlinePlain("a\nqwq")],
+            [new InlinePlain("a")],
         ),
     });
     notMatch({text: "\n"});

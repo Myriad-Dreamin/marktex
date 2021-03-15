@@ -58,7 +58,7 @@ export function newBlockRules(
     ];
 
     let rules2: Rule[] = [
-        new ParagraphRule({skipLaTeXBlock: opts?.enableLaTeX || false, skipMathBlock: true}),
+        new ParagraphRule(),
     ];
 
     // default enable
