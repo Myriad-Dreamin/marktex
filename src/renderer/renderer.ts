@@ -1,60 +1,37 @@
-import {Parser, StringStream} from "..";
+import {StringStream} from "..";
 import {
-    BlockElement,
     CodeBlock,
     Emphasis,
     HeaderBlock,
+    Horizontal,
     HTMLBlock,
     ImageLink,
     InlineCode,
     InlinePlain,
     LateXBlock,
     Link,
-    LinkDefinition,
     ListBlock,
     MathBlock,
     Paragraph,
-    Quotes,
-    Token,
-    TokenType
+    Quotes
 } from "../token/token";
-import {commandFunc, LaTeXParser, texCommands, TexContext} from "../parser/tex-parser";
 import {escapeHTML} from "../lib/escape";
+import {IRenderer, RenderContext} from "../proto";
 
 export type HighlightFunc = (code: string, language: string) => string;
 
-export interface RenderContext {
-    readonly render: Renderer;
-    readonly next: () => void;
-    readonly tokens: Token[];
-
-    linkDefs: { [linkIdentifier: string]: LinkDefinition };
-    html: string;
-    texCtx: TexContext;
-}
-
-export type RenderMiddleware = (ctx: RenderContext) => void;
-
 
 export interface RenderOptions {
-    originStack?: RenderMiddleware[],
     wrapCodeClassTag?: (language: string) => string,
     highlight?: HighlightFunc,
     enableLaTeX?: boolean,
 }
 
-export class Renderer {
-    protected parser: Parser;
-    private stack: RenderMiddleware[];
-    private readonly texCommands: { [p: string]: commandFunc };
-    private latexParser: LaTeXParser;
-
+export class Renderer implements IRenderer {
     protected highlight?: HighlightFunc;
     protected enableLaTeX?: boolean;
 
-    public constructor(parser: Parser, opts?: RenderOptions) {
-        this.parser = parser;
-        this.stack = opts?.originStack || [this.createLinkMap, this.handleElements];
+    public constructor(opts?: RenderOptions) {
         if (opts) {
             this.highlight = opts.highlight;
             this.enableLaTeX = opts.enableLaTeX;
@@ -63,150 +40,40 @@ export class Renderer {
                 this.wrapCodeClassTag = opts.wrapCodeClassTag;
             }
         }
-        this.texCommands = texCommands;
-        this.latexParser = new LaTeXParser();
     }
 
-    // noinspection JSUnusedGlobalSymbols
-    public addMiddleware(middleware: RenderMiddleware) {
-        this.stack.push(middleware);
-    }
-
-    // noinspection JSUnusedGlobalSymbols
-    public render(s: StringStream, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {
-        let stackIndex: number = 0;
-        let ctx: RenderContext = {
-            render: this, tokens: this.parser.parseBlockElements(s), linkDefs: {}, html: '', texCtx: {
-                texCommands: this.texCommands,
-                texCommandDefs: mdFieldTexCommands || {},
-            }, next() {
-                for (; stackIndex < ctx.render.stack.length;) {
-                    ctx.render.stack[stackIndex++](ctx);
-                }
-            }
-        };
-        ctx.next();
-        return ctx.html;
-    }
-
-    // noinspection JSUnusedGlobalSymbols
-    public renderString(s: string): string {
-        return this.render(new StringStream(s));
-    }
-
-    public renderElements(ctx: RenderContext, elements: Token[]) {
-        for (let el of elements) {
-            ctx.render.handleElement(ctx, el);
-        }
-    }
-
-    protected createLinkMap(ctx: RenderContext) {
-        for (let el of ctx.tokens) {
-            if (el.token_type === TokenType.LinkDefinition) {
-                let linkDef: LinkDefinition = <LinkDefinition>el;
-                ctx.linkDefs[linkDef.linkIdentifier] = linkDef;
-            }
-        }
-    }
-
-    protected handleElements(ctx: RenderContext) {
-        for (let el of ctx.tokens) {
-            ctx.render.handleElement(ctx, el);
-        }
-    }
-
-    protected handleElement(ctx: RenderContext, el: BlockElement) {
-        switch (el.token_type) {
-            case TokenType.Paragraph:
-                this.renderParagraph(ctx, el);
-                break;
-            case TokenType.NewLine:
-                this.renderNewLine(ctx, el);
-                break;
-            case TokenType.Quotes:
-                this.renderQuotes(ctx, el);
-                break;
-            case TokenType.ListBlock:
-                this.renderListBlock(ctx, el);
-                break;
-            case TokenType.Horizontal:
-                this.renderHorizontal(ctx, el);
-                break;
-            case TokenType.LinkDefinition:
-                this.renderLinkDefinition(ctx, el);
-                break;
-            case TokenType.CodeBlock:
-                this.renderCodeBlock(ctx, el);
-                break;
-            // can latex
-            case TokenType.HTMLBlock:
-                this.renderHTMLBlock(ctx, el);
-                break;
-            case TokenType.HeaderBlock:
-                this.renderHeaderBlock(ctx, el);
-                break;
-            // can latex
-            case TokenType.InlinePlain:
-                this.renderInlinePlain(ctx, el);
-                break;
-            // can latex
-            case TokenType.Link:
-                this.renderLink(ctx, el);
-                break;
-            case TokenType.ImageLink:
-                this.renderImageLink(ctx, el);
-                break;
-            case TokenType.MathBlock:
-                this.renderMathBlock(ctx, el);
-                break;
-            case TokenType.LatexBlock:
-                this.renderLatexBlock(ctx, el);
-                break;
-            // can latex
-            case TokenType.Emphasis:
-                this.renderEmphasis(ctx, el);
-                break;
-            case TokenType.InlineCode:
-                this.renderInlineCode(ctx, el);
-                break;
-            default:
-                throw new Error(`invalid Token Type: ${el.token_type}`);
-        }
-    }
-
-    protected renderParagraph(ctx: RenderContext, el: BlockElement) {
+    renderParagraph(ctx: RenderContext, paragraphEl: Paragraph) {
         ctx.html += '<p>';
-        ctx.render.renderElements(ctx, (<Paragraph>el).inlineElements);
+        ctx.driver.renderElements(ctx, paragraphEl.inlineElements);
         ctx.html += '</p>';
     }
 
-    protected renderNewLine(_: RenderContext, __: BlockElement) {
-        // ignore it
-    }
-
-    protected renderQuotes(ctx: RenderContext, el: BlockElement) {
+    renderQuotes(ctx: RenderContext, quotesEl: Quotes) {
         ctx.html += '<blockquote>';
-        ctx.render.renderElements(ctx, (<Quotes>el).insideTokens);
+        ctx.driver.renderElements(ctx, quotesEl.insideTokens);
         ctx.html += '</blockquote>';
     }
 
-    protected renderListBlock(ctx: RenderContext, el: BlockElement) {
-        let listBlock: ListBlock = <ListBlock>el;
-        ctx.html += '<' + (listBlock.ordered ? 'ol' : 'ul') + '>';
-        for (let listEl of listBlock.listElements) {
+    renderListBlock(ctx: RenderContext, listBlockEl: ListBlock) {
+        ctx.html += '<' + (listBlockEl.ordered ? 'ol' : 'ul') + '>';
+        for (let listEl of listBlockEl.listElements) {
             // omitting listEl.blankSeparated
             ctx.html += '<li>';
-            ctx.render.renderElements(ctx, listEl.innerBlocks);
+            ctx.driver.renderElements(ctx, listEl.innerBlocks);
             ctx.html += '</li>';
         }
-        ctx.html += '</' + (listBlock.ordered ? 'ol' : 'ul') + '>';
+        ctx.html += '</' + (listBlockEl.ordered ? 'ol' : 'ul') + '>';
     }
 
-    protected renderHorizontal(ctx: RenderContext, _: BlockElement) {
+    renderHorizontal(ctx: RenderContext, _: Horizontal) {
         ctx.html += "<hr/>";
     }
 
-    protected renderLinkDefinition(_: RenderContext, __: BlockElement) {
+    renderNewLine() {
+        // ignore it
+    }
+
+    renderLinkDefinition() {
         // ignore it
     }
 
@@ -214,95 +81,88 @@ export class Renderer {
         return 'lang-' + language;
     }
 
-    protected renderCodeBlock(ctx: RenderContext, el: BlockElement) {
-        let codeBlock: CodeBlock = <CodeBlock>(el);
+    renderCodeBlock(ctx: RenderContext, codeBlockEl: CodeBlock) {
         if (this.highlight) {
-            codeBlock.body = this.highlight(codeBlock.body, codeBlock.language || '');
+            codeBlockEl.body = this.highlight(codeBlockEl.body, codeBlockEl.language || '');
         } else {
-            codeBlock.body = escapeHTML(codeBlock.body);
+            codeBlockEl.body = escapeHTML(codeBlockEl.body);
         }
 
         ctx.html += '<pre><code' +
-            (codeBlock.language ? (' class="' + escapeHTML(this.wrapCodeClassTag(codeBlock.language)) + '"') : '') + '>' +
-            codeBlock.body + '</code></pre>';
+            (codeBlockEl.language ? (' class="' + escapeHTML(this.wrapCodeClassTag(codeBlockEl.language)) + '"') : '') + '>' +
+            codeBlockEl.body + '</code></pre>';
     }
 
-    protected renderHTMLBlock(ctx: RenderContext, el: BlockElement) {
-        ctx.html += (<HTMLBlock>(el)).body;
+    renderHTMLBlock(ctx: RenderContext, htmlBlockEl: HTMLBlock) {
+        ctx.html += htmlBlockEl.body;
     }
 
-    protected renderHeaderBlock(ctx: RenderContext, el: BlockElement) {
-        let headerBlock: HeaderBlock = <HeaderBlock>el;
-        ctx.html += "<h" + headerBlock.level + ">";
-        ctx.render.renderElements(ctx, headerBlock.inlineElements);
-        ctx.html += "</h" + headerBlock.level + ">";
+    renderHeaderBlock(ctx: RenderContext, headerBlockEl: HeaderBlock) {
+        ctx.html += "<h" + headerBlockEl.level + ">";
+        ctx.driver.renderElements(ctx, headerBlockEl.inlineElements);
+        ctx.html += "</h" + headerBlockEl.level + ">";
     }
 
-    protected renderInlinePlain(ctx: RenderContext, el: BlockElement) {
+    renderInlinePlain(ctx: RenderContext, inlinePlainEl: InlinePlain) {
         ctx.texCtx.underMathEnv = false;
         ctx.html += this.enableLaTeX ?
-            this.latexParser.tex(ctx.texCtx, new StringStream((<InlinePlain>(el)).content)) :
-            escapeHTML((<InlinePlain>(el)).content);
+            ctx.latexParser.tex(ctx.texCtx, new StringStream(inlinePlainEl.content)) :
+            escapeHTML(inlinePlainEl.content);
     }
 
-    protected renderLink(ctx: RenderContext, el: BlockElement) {
-        let link: Link = <Link>el;
-        if (!link.inlineOrReference) {
-            if (ctx.linkDefs.hasOwnProperty(link.link)) {
-                link.link = ctx.linkDefs[link.link].url;
-                link.inlineOrReference = true;
+    renderLink(ctx: RenderContext, linkEl: Link) {
+        if (!linkEl.inlineOrReference) {
+            if (ctx.linkDefs.hasOwnProperty(linkEl.link)) {
+                linkEl.link = ctx.linkDefs[linkEl.link].url;
+                linkEl.inlineOrReference = true;
             }
         }
 
-        ctx.html += '<a href="' + link.link + '"';
-        if (link.title) {
-            ctx.html += ' title="' + escapeHTML(link.title) + '"';
+        ctx.html += '<a href="' + linkEl.link + '"';
+        if (linkEl.title) {
+            ctx.html += ' title="' + escapeHTML(linkEl.title) + '"';
         }
         ctx.texCtx.underMathEnv = false;
         ctx.html += '>' + (
-            (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(link.linkTitle)) :
-                escapeHTML(link.linkTitle))) + '</a>';
+            (this.enableLaTeX ? ctx.latexParser.tex(ctx.texCtx, new StringStream(linkEl.linkTitle)) :
+                escapeHTML(linkEl.linkTitle))) + '</a>';
     }
 
-    protected renderImageLink(ctx: RenderContext, el: BlockElement) {
-        let link: ImageLink = <ImageLink>el;
-        if (!link.inlineOrReference) {
-            if (ctx.linkDefs.hasOwnProperty(link.link)) {
-                link.link = ctx.linkDefs[link.link].url;
-                link.inlineOrReference = true;
+    renderImageLink(ctx: RenderContext, imageLinkEl: ImageLink) {
+        if (!imageLinkEl.inlineOrReference) {
+            if (ctx.linkDefs.hasOwnProperty(imageLinkEl.link)) {
+                imageLinkEl.link = ctx.linkDefs[imageLinkEl.link].url;
+                imageLinkEl.inlineOrReference = true;
             }
         }
 
-        ctx.html += '<img src="' + link.link + '"' + '" alt="' + escapeHTML(link.linkTitle) + '"' +
-            (link.title ? ' title="' + escapeHTML(link.title) + '"' : '') +
+        ctx.html += '<img src="' + imageLinkEl.link + '"' + '" alt="' + escapeHTML(imageLinkEl.linkTitle) + '"' +
+            (imageLinkEl.title ? ' title="' + escapeHTML(imageLinkEl.title) + '"' : '') +
             "/>";
     }
 
-    protected renderMathBlock(ctx: RenderContext, el: BlockElement) {
-        let mathBlock: MathBlock = <MathBlock>el;
+    renderMathBlock(ctx: RenderContext, mathBlockEl: MathBlock) {
         ctx.texCtx.underMathEnv = true;
-        ctx.html += '<script type="math/tex' + (mathBlock.inline ? '' : '; mode=display') + '">' + (
-            this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(mathBlock.content)) :
-                mathBlock.content) + '</script>';
+        ctx.html += '<script type="math/tex' + (mathBlockEl.inline ? '' : '; mode=display') + '">' + (
+            this.enableLaTeX ? ctx.latexParser.tex(ctx.texCtx, new StringStream(mathBlockEl.content)) :
+                mathBlockEl.content) + '</script>';
     }
 
-    protected renderLatexBlock(ctx: RenderContext, el: BlockElement) {
-        let latexBlock: LateXBlock = <LateXBlock>el;
+    renderLatexBlock(ctx: RenderContext, latexBlockEl: LateXBlock) {
         ctx.texCtx.underMathEnv = false;
-        ctx.html += this.latexParser.tex(ctx.texCtx, new StringStream(latexBlock.content));
+        ctx.html += ctx.latexParser.tex(ctx.texCtx, new StringStream(latexBlockEl.content));
     }
 
-    protected renderEmphasis(ctx: RenderContext, el: BlockElement) {
-        let emphasisEl: Emphasis = <Emphasis>el;
+    renderEmphasis(ctx: RenderContext, emphasisEl: Emphasis) {
         ctx.texCtx.underMathEnv = false;
         ctx.html += (emphasisEl.level === 2 ? '<strong>' : '<em>') +
-            (this.enableLaTeX ? this.latexParser.tex(ctx.texCtx, new StringStream(emphasisEl.content)) :
+            (this.enableLaTeX ? ctx.latexParser.tex(ctx.texCtx, new StringStream(emphasisEl.content)) :
                 escapeHTML(emphasisEl.content)) +
             (emphasisEl.level === 2 ? '</strong>' : '</em>');
     }
 
-    protected renderInlineCode(ctx: RenderContext, el: BlockElement) {
-        ctx.html += '<code>' + escapeHTML((<InlineCode>el).content) + '</code>';
+    renderInlineCode(ctx: RenderContext, inlineCodeEl: InlineCode) {
+        ctx.html += '<code>' + escapeHTML(inlineCodeEl.content) + '</code>';
     }
 }
 

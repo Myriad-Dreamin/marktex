@@ -11,14 +11,15 @@ describe('author', () => {
 
 describe('renderer', () => {
     it('can render with default option', () => {
-        console.log(myriad.newRenderer().renderString('## hello marktex.js'))
+        console.log(myriad.newRenderDriver().renderString('## hello marktex.js'))
     });
     it('can render by default parser option', () => {
-        console.log((new myriad.Renderer(myriad.newParser())).renderString('## hello marktex.js'))
+        const driver = new myriad.RenderDriver(myriad.newParser(), myriad.newRenderer());
+        console.log(driver.renderString('## hello marktex.js'))
     });
 
     it('can render by default parser option', () => {
-        let _  = myriad.newRenderer({enableLaTeX: true});
+        let _ = myriad.newRenderDriver({enableLaTeX: true});
 
         console.log(_.renderString('## hello marktex.js'))
     })
