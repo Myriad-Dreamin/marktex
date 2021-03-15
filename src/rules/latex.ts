@@ -1,6 +1,6 @@
 import {forwardRegexp, StringStream} from "../lib/stream";
 import {Rule, RuleContext} from "./rule";
-import {InlinePlain, LateXBlock, MathBlock, MaybeToken, Paragraph} from "../token/token";
+import {InlinePlain, LaTeXBlock, MathBlock, MaybeToken, Paragraph} from "../token/token";
 import {maybeCompose, MaybeF} from "../lib/fp";
 
 function _braceMatch(s: StringStream, l: string, r: string): string {
@@ -73,7 +73,7 @@ export class LatexBlockRule implements Rule {
         }
 
         forwardRegexp(s, capturing);
-        return new LateXBlock(capturing[0] + this.braceMatch(s));
+        return new LaTeXBlock(capturing[0] + this.braceMatch(s));
     }
 
     braceMatch(s: StringStream) {

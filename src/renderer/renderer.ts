@@ -8,7 +8,7 @@ import {
     ImageLink,
     InlineCode,
     InlinePlain,
-    LateXBlock,
+    LaTeXBlock,
     Link,
     ListBlock,
     MathBlock,
@@ -148,7 +148,7 @@ export class Renderer implements IRenderer {
                 mathBlockEl.content) + '</script>';
     }
 
-    renderLatexBlock(ctx: RenderContext, latexBlockEl: LateXBlock) {
+    renderLatexBlock(ctx: RenderContext, latexBlockEl: LaTeXBlock) {
         ctx.texCtx.underMathEnv = false;
         ctx.html += ctx.latexParser.tex(ctx.texCtx, new StringStream(latexBlockEl.content));
     }
