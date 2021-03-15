@@ -1,25 +1,30 @@
 import {Parser} from "./parser/parser";
-import {HighlightFunc, Renderer, RenderMiddleware} from "./renderer/renderer";
+import {HighlightFunc, Renderer} from "./renderer/renderer";
 import {StringStream} from "./lib/stream";
 import {newBlockRules, newInlineRules, newRules} from "./rules";
 import {HTMLBlockOptions} from "./rules/std";
+import {RenderDriver, RenderMiddleware} from "./driver/driver";
 
-export interface MarkTeXParserOptions {
+interface MarkTeXBasicEnableOptions {
     enableLaTeX?: boolean;
     enableGFMRules?: boolean;
-
     enableHtml?: boolean;
+}
+
+export interface MarkTeXParserOptions extends MarkTeXBasicEnableOptions {
     HTMLBlockOptions?: HTMLBlockOptions;
 }
 
-
-export interface MarkTeXRendererOptions extends MarkTeXParserOptions {
-    parser?: Parser;
-
+export interface MarkTeXRendererOptions extends MarkTeXBasicEnableOptions {
     highlight?: HighlightFunc;
     wrapCodeClassTag?: (language: string) => string;
 
     originStack?: RenderMiddleware[];
+}
+
+export interface MarkTeXRenderDriverOptions extends MarkTeXParserOptions, MarkTeXRendererOptions {
+    parser?: Parser;
+    renderer?: Renderer;
 }
 
 //
@@ -35,16 +40,22 @@ const myriad = {
         return new Parser(newRules(options));
     },
     newRenderer(options?: MarkTeXRendererOptions): Renderer {
-        return new Renderer(options?.parser || myriad.newParser(options), options);
+        return new Renderer(options);
+    },
+    newRenderDriver(options?: MarkTeXRenderDriverOptions): RenderDriver {
+        return new RenderDriver(
+            options?.parser || myriad.newParser(options),
+            options?.renderer || myriad.newRenderer(options),
+            options);
     },
     newStringStream(str: string): StringStream {
         return new StringStream(str);
     },
     newInlineRules, newBlockRules, newRules,
-    Parser, Renderer, StringStream,
+    Parser, Renderer, RenderDriver, StringStream,
 };
 
 
 // noinspection JSUnusedGlobalSymbols
 export default myriad;
-export {myriad, Parser, Renderer, StringStream};
+export {myriad, Parser, RenderDriver, StringStream};
