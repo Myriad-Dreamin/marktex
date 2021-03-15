@@ -64,35 +64,17 @@ export class ParagraphRule implements Rule {
 
     // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
 
-    constructor({otherBlockBegin = []}: { otherBlockBegin: string[] }) {
+    constructor() {
 
     }
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let lastChar: string = 'a', i = 0;
         if (s.source[0] == '\n') {
             return undefined;
         }
-        for (; i < s.source.length; i++) {
-            // noinspection DuplicatedCode
-            if (lastChar === '\n') {
-                if (('\n' === s.source[i]) ||
-                    // ('\t' === s.source[i]) || (s.source[i] === ' ' &&
-                    // i + 3 < s.source.length && s.source[i + 1] === ' ' &&
-                    // s.source[i + 2] === ' ' && s.source[i + 3] === ' ') ||
-                    ('*+-'.includes(s.source[i]) && (i + 1 < s.source.length && s.source[i + 1] === ' '))) {
-                    i--;
-                    break;
-                }
-            }
-            if (lastChar === '\\' && s.source[i] !== '\n') {
-                lastChar = 'a';
-            } else {
-                lastChar = s.source[i];
-            }
-        }
-        if (!i) {
-            return undefined;
+        const i = s.source.indexOf('\n');
+        if (i === -1) {
+            return new Paragraph(ctx.parseInlineElements(s));
         }
         let capturing = s.source.slice(0, i);
         s.forward(i);

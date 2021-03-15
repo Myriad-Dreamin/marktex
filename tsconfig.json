@@ -16,6 +16,7 @@
     "src/**/*.bench.ts",
     "src/lib/test_util.ts",
     "dist"
+    // "scripts/compiler.ts"
   ],
   "include": [
     "src"
