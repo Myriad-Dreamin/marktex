@@ -438,6 +438,28 @@ class HeaderBlock implements BlockElement {
     }
 }
 
+class LaTeXBlock implements BlockElement {
+    readonly token_type = TokenType.LatexBlock;
+
+    public content: string;
+    public inline?: boolean;
+
+    constructor(content: string) {
+        this.content = content;
+    }
+}
+
+class MathBlock implements BlockElement {
+    readonly token_type = TokenType.MathBlock;
+
+    public content: string;
+    public inline?: boolean;
+
+    constructor(content: string, inline: boolean) {
+        this.content = content;
+        this.inline = inline;
+    }
+}
 
 class InlinePlain implements InlineElement {
     readonly token_type = TokenType.InlinePlain;
@@ -497,31 +519,6 @@ class InlineCode implements InlineElement {
 
     constructor(content: string) {
         this.content = content;
-    }
-}
-
-
-class LaTeXBlock implements InlineElement {
-    readonly token_type = TokenType.LatexBlock;
-
-    public content: string;
-    public inline?: boolean;
-
-    constructor(content: string) {
-        this.content = content;
-    }
-}
-
-
-class MathBlock implements InlineElement {
-    readonly token_type = TokenType.MathBlock;
-
-    public content: string;
-    public inline?: boolean;
-
-    constructor(content: string, inline: boolean) {
-        this.content = content;
-        this.inline = inline;
     }
 }
 
