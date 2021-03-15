@@ -501,7 +501,7 @@ class InlineCode implements InlineElement {
 }
 
 
-class LateXBlock implements InlineElement {
+class LaTeXBlock implements InlineElement {
     readonly token_type = TokenType.LatexBlock;
 
     public content: string;
@@ -546,7 +546,7 @@ export {
     HTMLBlock,
     HeaderBlock,
     MathBlock,
-    LateXBlock,
+    LaTeXBlock,
 
     InlinePlain,
     Link,

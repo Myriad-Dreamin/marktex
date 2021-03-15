@@ -10,7 +10,7 @@ import {
     ImageLink,
     InlineCode,
     InlinePlain,
-    LateXBlock,
+    LaTeXBlock,
     Link,
     LinkDefinition,
     ListBlock,
@@ -147,7 +147,7 @@ export class RenderDriver implements IRenderDriver {
                 ctx.render.renderMathBlock(ctx, <MathBlock>el);
                 break;
             case TokenType.LatexBlock:
-                ctx.render.renderLatexBlock(ctx, <LateXBlock>el);
+                ctx.render.renderLatexBlock(ctx, <LaTeXBlock>el);
                 break;
             // can latex
             case TokenType.Emphasis:

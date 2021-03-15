@@ -9,7 +9,7 @@ import {
     ImageLink,
     InlineCode,
     InlinePlain,
-    LateXBlock,
+    LaTeXBlock,
     Link,
     LinkDefinition,
     ListBlock,
@@ -75,7 +75,7 @@ export interface IRenderer {
 
     renderMathBlock(ctx: RenderContext, mathBlockEl: MathBlock): void;
 
-    renderLatexBlock(ctx: RenderContext, latexBlockEl: LateXBlock): void;
+    renderLatexBlock(ctx: RenderContext, latexBlockEl: LaTeXBlock): void;
 
     renderHeaderBlock(ctx: RenderContext, headerBlockEl: HeaderBlock): void;
 
