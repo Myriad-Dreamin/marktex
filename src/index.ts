@@ -58,4 +58,4 @@ const myriad = {
 
 // noinspection JSUnusedGlobalSymbols
 export default myriad;
-export {myriad, Parser, RenderDriver, StringStream};
+export {myriad, Parser, Renderer, RenderDriver, StringStream};

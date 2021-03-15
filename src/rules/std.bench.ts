@@ -1,7 +1,7 @@
 import {onRun} from "../lib/test_util";
 import {ListBlockRule} from "./std";
 
-onRun(new ListBlockRule(), function (runner) {
+onRun(new ListBlockRule({enableGFMRules: false}), function (runner) {
 
     runner({text: '* a'});
 // 2150ns per op;
