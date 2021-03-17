@@ -19,6 +19,7 @@ import {
     Quotes
 } from "../token/token";
 import {unescapeBackSlash} from "../lib/escape";
+import List = Mocha.reporters.List;
 
 
 // Standard Markdown Rules
@@ -180,13 +181,21 @@ export class LinkDefinitionRule implements Rule {
     };
 }
 
+enum ListBlockMatchState {
+    FindStartNumber = 0,
+    PushListElement = 1,
+    MatchBodyLine = 2,
+    Final = 3,
+}
+
 export class ListBlockRule implements Rule {
     readonly name: string = "Standard/Block/ListBlock";
     readonly description: string = "Standard Markdown Block Rule";
     public static readonly gfmSelectorRule = /^\s{0,3}\[([ x])]\s*/;
     //^((?:[^\n]+(?:\n|$)(?=[^0-9*+-])(\n(?=[^0-9*+-]))?)+)
-    public static readonly listBlockRegex = /^(?:(?:[^\n]*)(?:\n|$)\n?)(?:(?=[^0-9*+-])(?:[^\n]+)(?:\n|$)\n?)*/;
-    public static readonly replaceRegex = /^(?: {4}|\t)/gm;
+    //^(?:(?:[^\n]*)(?:\n|$)\n?)(?:(?=[^0-9*+-])(?:[^\n]+)(?:\n|$)\n?)*
+    public static readonly listBlockRegex = /^(?:(?:[^\n]*)(?:\n|$))(?:(?=\n?[^0-9*+-])(?:[^\n]+)(?:\n|$))*/;
+    public static readonly replaceRegex = /^(?: {2}|\t)/gm;
     private readonly enableGFMRules: boolean;
 
     constructor({enableGFMRules}: { enableGFMRules?: boolean }) {
@@ -195,15 +204,183 @@ export class ListBlockRule implements Rule {
 
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let ordered: boolean;
-        if ("*+-".includes(s.source[0])) {
-            ordered = false;
-        } else if ('0' <= s.source[0] && s.source[0] <= '9') {
-            ordered = true;
-        } else {
+        let lookAheadRegex = /^[\t\r\v\f ]{0,3}([*+-]|[0-9]+\.)[\t\r\v\f ]/;
+        // ^[^\n]*(?:\n|$)[^\n]*(((?:\s*[\r\t\f\v ]{2,}[^\n]*)(?:\n|$)[^\n]*)*)
+        // const matchBodyRegex = /^[^\n]*(?:\n|$)((?:\s{2,}[^\n]*)(?:\n|$))*/;
+        /**
+         * undefined behavior:
+         * + a
+         * [ ]{2}
+         * + 1
+         *
+         * will parsed into:
+         * {+ }{a
+         * [ ]{2}}
+         * {+ }{1}
+         */
+        const matchBodyRegex = /^(?:\s*?([\r\t\f\v ]{2,}[^\n]*(?:\n|$)))*/;
+        let capturing = lookAheadRegex.exec(s.source);
+        if (!capturing) {
             return undefined;
         }
-        return this.matchBlock(new ListBlock(ordered), s, ctx);
+        let currMarker: string = capturing[1];
+        forwardRegexp(s, capturing);
+
+        let newLineSeparated: boolean = false;
+        let maybeNewlineSeparated: boolean = false;
+        let nextMarker: string = '';
+        // let fsnNextState : ListBlockMatchState = ListBlockMatchState.Final;
+        let pleNextState : ListBlockMatchState = ListBlockMatchState.Final;
+
+
+        // const maybeNewlineSeparated = capturing[0].endsWith('\n');
+        const listBodies: string[] = [];
+
+        const matchFullLineBody = () => {
+            let readPtr = 0;
+            while(readPtr < s.source.length && s.at(readPtr) !== '\n') {
+                readPtr++;
+            }
+            maybeNewlineSeparated = readPtr < s.source.length;
+            if (maybeNewlineSeparated) {
+                readPtr++;
+            }
+            if (readPtr) {
+                listBodies.push(s.source.slice(0, readPtr));
+                s.forward(readPtr);
+            }
+        }
+        matchFullLineBody();
+
+        const ordered = '0' <= currMarker && currMarker <= '9';
+        const listBlockEl = new ListBlock(ordered);
+        // forwardRegexp(s, capturing);
+
+        if (ordered) {
+            currMarker = currMarker.slice(0, currMarker.length-1);
+            lookAheadRegex = /^[\t\r\v\f ]?([0-9]+)\.[\t\r\v\f ]/;
+        } else {
+            lookAheadRegex = /^[\t\r\v\f ]?([*+-])[\t\r\v\f ]/;
+        }
+
+        // const matchBody = () => {
+        //     let capturing = matchBodyRegex.exec(s.source);
+        //     if (!capturing) {
+        //         throw new Error("match error");
+        //     }
+        //     listBlockEl.listElements.push(new ListElement(currMarker, ctx.parseBlockElements(
+        //         new StringStream(capturing[0].replace(ListBlockRule.replaceRegex, '')),
+        //     ), capturing[1]?.indexOf('\n') !== -1, undefined))
+        //     forwardRegexp(s, capturing);
+        //     // const bodyStart = readPtr;
+        //     // while(readPtr < s.source.length) {
+        //     //     if (s.at(readPtr) === '\n') {
+        //     //         readPtr++;
+        //     //         break;
+        //     //     }
+        //     //     readPtr++;
+        //     // }
+        //     // listBodies.push(s.source.slice(bodyStart, readPtr));
+        //     // s.forward(readPtr);
+        // }
+        // matchBody();
+        //
+        // for (;;) {
+        //     if (!matchElement()) {
+        //         return listBlockEl;
+        //     }
+        //     matchBody();
+        // }
+
+
+        let state = ListBlockMatchState.MatchBodyLine;
+        for (;;) {
+            switch (state) {
+                case ListBlockMatchState.FindStartNumber:
+                    capturing = lookAheadRegex.exec(s.source);
+                    if (!capturing) {
+                        nextMarker = "";
+                        if (newLineSeparated) {
+                            state = currMarker.length ? ListBlockMatchState.PushListElement : ListBlockMatchState.Final;
+                        } else {
+                            matchFullLineBody();
+                            if (maybeNewlineSeparated) {
+                                state = ListBlockMatchState.MatchBodyLine;
+                            } else {
+                                state = currMarker.length ? ListBlockMatchState.PushListElement : ListBlockMatchState.Final;
+                            }
+                        }
+                    } else {
+                        nextMarker = capturing[1];
+                        // firstLine = true;
+                        forwardRegexp(s, capturing);
+                        state = ListBlockMatchState.PushListElement;
+                        pleNextState = ListBlockMatchState.MatchBodyLine;
+                    }
+                    break;
+                case ListBlockMatchState.PushListElement:
+                    listBlockEl.listElements.push(new ListElement(currMarker, ctx.parseBlockElements(
+                        new StringStream(listBodies.join('').replace(ListBlockRule.replaceRegex, '')),
+                    ), newLineSeparated, undefined))
+                    currMarker = nextMarker;
+                    listBodies.splice(0, listBodies.length);
+                    if (nextMarker.length) {
+                        matchFullLineBody();
+                        // match end
+                        if (!maybeNewlineSeparated) {
+                            currMarker = nextMarker;
+                            nextMarker = '';
+                            if (currMarker.length) {
+                                pleNextState = ListBlockMatchState.PushListElement;
+                                newLineSeparated = false;
+                            } else {
+                                pleNextState = ListBlockMatchState.Final
+                            }
+                        }
+                    }
+                    state = pleNextState;
+                    pleNextState = ListBlockMatchState.Final;
+                    break;
+                case ListBlockMatchState.MatchBodyLine:
+                    // readPtr = 0;
+                    // while(readPtr < s.source.length && s.at(readPtr) !== '\n') {
+                    //     readPtr++;
+                    // }
+                    // if (!firstLine) {
+                    //
+                    // }
+                    // firstLine = false;
+                    capturing = matchBodyRegex.exec(s.source)!;
+                    if (capturing[0].length) {
+                        listBodies.push(capturing[0]);
+                        maybeNewlineSeparated = capturing[0].endsWith('\n');
+                        forwardRegexp(s, capturing);
+                    }
+                    capturing = (/^\s*/m.exec(s.source))!;
+                    if (maybeNewlineSeparated) {
+                        newLineSeparated = capturing[0].indexOf('\n') !== -1;
+                    }
+                    forwardRegexp(s, capturing);
+                    maybeNewlineSeparated = false;
+                    state = ListBlockMatchState.FindStartNumber;
+                    // if (readPtr === s.source.length) {
+                    //     listBodies.push(s.source.slice(0, readPtr));
+                    //     s.forward(readPtr);
+                    //     state = ListBlockMatchState.PushListElement;
+                    //     pleNextState = ListBlockMatchState.Final;
+                    // } else {
+                    //     s.forward(readPtr);
+                    //     state = ListBlockMatchState.FindStartNumber;
+                    //     fsnNextState = ListBlockMatchState.MatchBodyLine;
+                    // }
+                    break;
+                case ListBlockMatchState.Final:
+                    return listBlockEl;
+                default:
+                    throw new Error(`unknown state: ${state}`);
+            }
+        }
+        // return this.matchBlock(new ListBlock(ordered), s, ctx);
     };
 
     private matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
@@ -216,18 +393,24 @@ export class ListBlockRule implements Rule {
         for (blockContent = '', marker = nextMarker, nextMarker = undefined;
              marker !== undefined;
              blockContent = '', marker = nextMarker, nextMarker = undefined) {
-            do {
-                let capturing = ListBlockRule.listBlockRegex.exec(s.source);
-                if (capturing === null) {
-                    throw s.wrapErr(new Error("match block failed"));
-                }
-                forwardRegexp(s, capturing);
-                blockContent += capturing[0];
+            // do {
+            //     let capturing = ListBlockRule.listBlockRegex.exec(s.source);
+            //     if (capturing === null) {
+            //         throw s.wrapErr(new Error("match block failed"));
+            //     }
+            //     forwardRegexp(s, capturing);
+            //     blockContent += capturing[0];
+            //
+            //
+            // } while (!s.eof && !l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
+            let capturing = ListBlockRule.listBlockRegex.exec(s.source);
+            if (capturing === null) {
+                throw s.wrapErr(new Error("match block failed"));
+            }
+            forwardRegexp(s, capturing);
+            // blockContent += capturing[0];
 
-
-            } while (!s.eof && !l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
-
-            blockContent = blockContent.replace(ListBlockRule.replaceRegex, '');
+            blockContent = capturing[0].replace(ListBlockRule.replaceRegex, '');
             let sep = blockContent.endsWith('\n\n');
             if (sep) {
                 blockContent = blockContent.slice(0, blockContent.length - 2);

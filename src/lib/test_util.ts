@@ -4,6 +4,7 @@ import {Parser} from "..";
 
 import * as chai from 'chai';
 import Benchmark = require("benchmark");
+import * as crypto from 'crypto';
 
 export const expect = chai.expect;
 export type elementMatcher = ({title, text, matchedLength: number, expectedElement}:
@@ -14,10 +15,21 @@ export function createContext(): Parser {
     return new Parser();
 }
 
+export function testTitleString(text: string): string {
+    if (text.length < 15) {
+        return text;
+    }
+
+    const hash = crypto.createHash('md5');
+    const digest = hash.update(text).digest()
+        .toString('hex').substr(0, 8);
+    return `${text.substr(0, 8)} (${digest})`
+}
+
 export function itWillMatchElement(rule: Rule, ctx: RuleContext = createContext()): elementMatcher {
     return ({title, text, matchedLength, expectedElement}:
                 { title?: string, text: string, matchedLength: number, expectedElement: any }) => {
-        it(title ? title : ('will match ' + text), () => {
+        it(title ? title : ('will match ' + testTitleString(text)), () => {
             let stream = new StringStream(text);
             expect(rule.match(stream, ctx)).to.deep.equal(expectedElement);
             expect(stream.pos).to.equal(matchedLength);
@@ -27,7 +39,7 @@ export function itWillMatchElement(rule: Rule, ctx: RuleContext = createContext(
 
 export function itWillNotMatchElement(rule: Rule, ctx: RuleContext = createContext()): textAcceptor {
     return ({title, text}: { title?: string, text: string }) => {
-        it(title ? title : ('will not match ' + text), () => {
+        it(title ? title : ('will not match ' + testTitleString(text)), () => {
             expect(rule.match(new StringStream(text), ctx)).to.be.equal(undefined);
         })
     }
@@ -35,7 +47,7 @@ export function itWillNotMatchElement(rule: Rule, ctx: RuleContext = createConte
 
 export function benchText(suite: Benchmark.Suite, rule: Rule, ctx: RuleContext = createContext()): textAcceptor {
     return ({title, text}: { title?: string, text: string }) => {
-        suite.add(title ? title : ('test match ' + text), () => {
+        suite.add(title ? title : ('test match ' + testTitleString(text)), () => {
             rule.match(new StringStream(text), ctx);
         });
     }
