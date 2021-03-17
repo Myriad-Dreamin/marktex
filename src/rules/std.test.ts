@@ -502,34 +502,31 @@ describe("ListBlockRule", () => {
     let rule: ListBlockRule = new ListBlockRule({});
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: textAcceptor = itWillNotMatchElement(rule);
+
     match({
-        text: "* a\n\n* b",
-        matchedLength: "* a\n\n* b".length,
-        expectedElement: new ListBlock(false, [
-            new ListElement(
-                '*',
-                [new Paragraph([new InlinePlain('a')])],
-                true,
-            ),
-            new ListElement(
-                '*',
-                [new Paragraph([new InlinePlain('b')])],
-                true,
-            ),
-        ]),
+        text: "* ",
+        matchedLength: "* ".length,
+        expectedElement: new ListBlock(false, [new ListElement('*')]),
     });
+    
     match({
         text: "* 1\n1\n\n    + 1\n+ 1",
         matchedLength: "* 1\n1\n\n    + 1\n+ 1".length,
         expectedElement: new ListBlock(false, [
             new ListElement(
                 '*',
-                [new Paragraph([new InlinePlain('1\n1')]),
+                [
+                    new Paragraph([new InlinePlain('1')]),
+                    new NewLine('\n'),
+                    new Paragraph([new InlinePlain('1')]),
                     new NewLine('\n\n'),
                     new ListBlock(false, [
                         new ListElement(
                             '+',
-                            [new Paragraph([new InlinePlain('1\n')])],
+                            [
+                                new Paragraph([new InlinePlain('1')]),
+                                new NewLine('\n'),
+                            ],
                             false,
                         ),
                     ]),
@@ -546,10 +543,25 @@ describe("ListBlockRule", () => {
     });
 
     match({
-        text: "* ",
-        matchedLength: "* ".length,
-        expectedElement: new ListBlock(false, [new ListElement('*')]),
+        text: "* a\n\n* b",
+        matchedLength: "* a\n\n* b".length,
+        expectedElement: new ListBlock(false, [
+            new ListElement(
+                '*',
+                [
+                    new Paragraph([new InlinePlain('a')]),
+                    new NewLine('\n'),
+                ],
+                true,
+            ),
+            new ListElement(
+                '*',
+                [new Paragraph([new InlinePlain('b')])],
+                false,
+            ),
+        ]),
     });
+
     match({
         text: "* a",
         matchedLength: "* a".length,
@@ -559,13 +571,17 @@ describe("ListBlockRule", () => {
                 [new Paragraph([new InlinePlain('a')])]
             )]),
     });
+
     match({
         text: "* a\n* b",
         matchedLength: "* a\n* b".length,
         expectedElement: new ListBlock(false, [
             new ListElement(
                 '*',
-                [new Paragraph([new InlinePlain('a\n')])]
+                [
+                    new Paragraph([new InlinePlain('a')]),
+                    new NewLine('\n'),
+                ]
             ),
             new ListElement(
                 '*',
@@ -573,6 +589,45 @@ describe("ListBlockRule", () => {
             ),
         ]),
     });
+
+    match({
+        text:
+            "1. weak isolation between TAs in the TEE, with\n" +
+            "2. Trusted Computing Base (TCB) expansion, and\n" +
+            "3. highly privileged access to the platform, making TrustZone a high-value target for attackers.\n" +
+            "\n" +
+            "Spatial isolation of a SANCTUARY Instance is achieved by\n",
+        matchedLength: (
+            "1. weak isolation between TAs in the TEE, with\n" +
+            "2. Trusted Computing Base (TCB) expansion, and\n" +
+            "3. highly privileged access to the platform, making TrustZone a high-value target for attackers.\n" +
+            "\n")
+                .length,
+        expectedElement: new ListBlock(true, [
+            new ListElement(
+                '1',
+                [
+                    new Paragraph([new InlinePlain('weak isolation between TAs in the TEE, with')]),
+                    new NewLine('\n'),
+                ]
+            ),
+            new ListElement(
+                '2',
+                [
+                    new Paragraph([new InlinePlain('Trusted Computing Base (TCB) expansion, and')]),
+                    new NewLine('\n'),
+                ]
+            ),
+            new ListElement(
+                '3',
+                [
+                    new Paragraph([new InlinePlain('highly privileged access to the platform, making TrustZone a high-value target for attackers.')]),
+                    new NewLine('\n'),
+                ],
+                true,
+            ),
+        ])
+    })
 });
 
 describe("GFMListBlockRule", () => {

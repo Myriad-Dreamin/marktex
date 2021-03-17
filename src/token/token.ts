@@ -139,13 +139,13 @@ class ListElement {
     public innerBlocks: BlockElement[];
     public marker: string;
     // is it good?
-    public blankSeparated: boolean;
+    public lineBreakAttached: boolean;
     public selector?: string;
 
-    constructor(marker: string, innerBlocks: BlockElement[] = [], blankSeparated: boolean = false, selector?: string) {
+    constructor(marker: string, innerBlocks: BlockElement[] = [], lineBreakAttached: boolean = false, selector?: string) {
         this.marker = marker;
         this.innerBlocks = innerBlocks;
-        this.blankSeparated = blankSeparated;
+        this.lineBreakAttached = lineBreakAttached;
         this.selector = selector;
     }
 }
@@ -266,12 +266,18 @@ class ListBlock implements BlockElement {
 
     public lookAhead0(s: StringStream): boolean {
         if (s.eof) return false;
+        let fwdPtr = 0;
+        if (s.source[0] === '\n') {
+            if (s.source.length <= 1)
+                return false;
+            fwdPtr = 1;
+        }
         if (this.ordered) {
-            return '0' <= s.source[0] && s.source[0] <= '9'
-        } else if ('*+-'.includes(s.source[0])) {
+            return '0' <= s.source[fwdPtr] && s.source[fwdPtr] <= '9'
+        } else if ('*+-'.includes(s.source[fwdPtr])) {
             let j = 0;
-            for (let i = 0; s.source[i] && s.source[i] != '\n'; i++) {
-                if (s.source[i] == s.source[0]) {
+            for (let i = fwdPtr; s.source[i] && s.source[i] != '\n'; i++) {
+                if (s.source[i] == s.source[fwdPtr]) {
                     j++;
                 } else if (!'\t\r\v\f '.includes(s.source[i])) {
                     j = 0;
@@ -284,7 +290,14 @@ class ListBlock implements BlockElement {
     }
 
     public static lookAheadOrderedListNumber(s: StringStream): string | undefined {
-        for (let i = 0; ; i++) {
+        if (s.eof) return undefined;
+        let fwdPtr = 0;
+        if (s.source[0] === '\n') {
+            if (s.source.length <= 1)
+                return undefined;
+            fwdPtr = 1;
+        }
+        for (let i = fwdPtr; i < s.source.length; i++) {
             if ('0' <= s.source[i] && s.source[i] <= '9') {
                 continue;
             }
@@ -295,11 +308,19 @@ class ListBlock implements BlockElement {
             }
             return undefined;
         }
+        return undefined;
     }
 
     public static lookAheadUnorderedListMarker(s: StringStream): string | undefined {
-        if ('*+-'.includes(s.source[0]) && s.source[1] == ' ') {
-            let m: string = s.source[0];
+        if (s.eof) return undefined;
+        let fwdPtr = 0;
+        if (s.source[0] === '\n') {
+            if (s.source.length <= 1)
+                return undefined;
+            fwdPtr = 1;
+        }
+        if ('*+-'.includes(s.source[fwdPtr]) && s.source[fwdPtr+1] == ' ') {
+            let m: string = s.source[fwdPtr];
             s.forward(2);
             return m;
         }

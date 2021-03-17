@@ -57,7 +57,7 @@ export class Renderer implements IRenderer {
     renderListBlock(ctx: RenderContext, listBlockEl: ListBlock) {
         ctx.html += '<' + (listBlockEl.ordered ? 'ol' : 'ul') + '>';
         for (let listEl of listBlockEl.listElements) {
-            // omitting listEl.blankSeparated
+            // omitting listEl.lineBreakAttached
             ctx.html += '<li>';
             ctx.driver.renderElements(ctx, listEl.innerBlocks);
             ctx.html += '</li>';
