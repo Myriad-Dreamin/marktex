@@ -195,6 +195,18 @@ export class ListBlockRule implements Rule {
     //^((?:[^\n]+(?:\n|$)(?=[^0-9*+-])(\n(?=[^0-9*+-]))?)+)
     //^(?:(?:[^\n]*)(?:\n|$)\n?)(?:(?=[^0-9*+-])(?:[^\n]+)(?:\n|$)\n?)*
     public static readonly listBlockRegex = /^(?:(?:[^\n]*)(?:\n|$))(?:(?=\n?[^0-9*+-])(?:[^\n]+)(?:\n|$))*/;
+    /**
+     * undefined behavior:
+     * + a
+     * [ ]{2}
+     * + 1
+     *
+     * will parsed into:
+     * {+ }{a
+     * [ ]{2}}
+     * {+ }{1}
+     */
+    public static readonly matchIndentedBody = /^(?:\s*?([\r\t\f\v ]{2,}[^\n]*(?:\n|$)))*/;
     public static readonly replaceRegex = /^(?: {2}|\t)/gm;
     private readonly enableGFMRules: boolean;
 
@@ -205,20 +217,6 @@ export class ListBlockRule implements Rule {
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         let lookAheadRegex = /^[\t\r\v\f ]{0,3}([*+-]|[0-9]+\.)[\t\r\v\f ]/;
-        // ^[^\n]*(?:\n|$)[^\n]*(((?:\s*[\r\t\f\v ]{2,}[^\n]*)(?:\n|$)[^\n]*)*)
-        // const matchBodyRegex = /^[^\n]*(?:\n|$)((?:\s{2,}[^\n]*)(?:\n|$))*/;
-        /**
-         * undefined behavior:
-         * + a
-         * [ ]{2}
-         * + 1
-         *
-         * will parsed into:
-         * {+ }{a
-         * [ ]{2}}
-         * {+ }{1}
-         */
-        const matchBodyRegex = /^(?:\s*?([\r\t\f\v ]{2,}[^\n]*(?:\n|$)))*/;
         let capturing = lookAheadRegex.exec(s.source);
         if (!capturing) {
             return undefined;
@@ -229,11 +227,9 @@ export class ListBlockRule implements Rule {
         let newLineSeparated: boolean = false;
         let maybeNewlineSeparated: boolean = false;
         let nextMarker: string = '';
-        // let fsnNextState : ListBlockMatchState = ListBlockMatchState.Final;
         let pleNextState : ListBlockMatchState = ListBlockMatchState.Final;
 
 
-        // const maybeNewlineSeparated = capturing[0].endsWith('\n');
         const listBodies: string[] = [];
 
         const matchFullLineBody = () => {
@@ -254,7 +250,6 @@ export class ListBlockRule implements Rule {
 
         const ordered = '0' <= currMarker && currMarker <= '9';
         const listBlockEl = new ListBlock(ordered);
-        // forwardRegexp(s, capturing);
 
         if (ordered) {
             currMarker = currMarker.slice(0, currMarker.length-1);
@@ -262,35 +257,6 @@ export class ListBlockRule implements Rule {
         } else {
             lookAheadRegex = /^[\t\r\v\f ]?([*+-])[\t\r\v\f ]/;
         }
-
-        // const matchBody = () => {
-        //     let capturing = matchBodyRegex.exec(s.source);
-        //     if (!capturing) {
-        //         throw new Error("match error");
-        //     }
-        //     listBlockEl.listElements.push(new ListElement(currMarker, ctx.parseBlockElements(
-        //         new StringStream(capturing[0].replace(ListBlockRule.replaceRegex, '')),
-        //     ), capturing[1]?.indexOf('\n') !== -1, undefined))
-        //     forwardRegexp(s, capturing);
-        //     // const bodyStart = readPtr;
-        //     // while(readPtr < s.source.length) {
-        //     //     if (s.at(readPtr) === '\n') {
-        //     //         readPtr++;
-        //     //         break;
-        //     //     }
-        //     //     readPtr++;
-        //     // }
-        //     // listBodies.push(s.source.slice(bodyStart, readPtr));
-        //     // s.forward(readPtr);
-        // }
-        // matchBody();
-        //
-        // for (;;) {
-        //     if (!matchElement()) {
-        //         return listBlockEl;
-        //     }
-        //     matchBody();
-        // }
 
 
         let state = ListBlockMatchState.MatchBodyLine;
@@ -312,7 +278,6 @@ export class ListBlockRule implements Rule {
                         }
                     } else {
                         nextMarker = capturing[1];
-                        // firstLine = true;
                         forwardRegexp(s, capturing);
                         state = ListBlockMatchState.PushListElement;
                         pleNextState = ListBlockMatchState.MatchBodyLine;
@@ -342,15 +307,7 @@ export class ListBlockRule implements Rule {
                     pleNextState = ListBlockMatchState.Final;
                     break;
                 case ListBlockMatchState.MatchBodyLine:
-                    // readPtr = 0;
-                    // while(readPtr < s.source.length && s.at(readPtr) !== '\n') {
-                    //     readPtr++;
-                    // }
-                    // if (!firstLine) {
-                    //
-                    // }
-                    // firstLine = false;
-                    capturing = matchBodyRegex.exec(s.source)!;
+                    capturing = ListBlockRule.matchIndentedBody.exec(s.source)!;
                     if (capturing[0].length) {
                         listBodies.push(capturing[0]);
                         maybeNewlineSeparated = capturing[0].endsWith('\n');
@@ -363,16 +320,6 @@ export class ListBlockRule implements Rule {
                     forwardRegexp(s, capturing);
                     maybeNewlineSeparated = false;
                     state = ListBlockMatchState.FindStartNumber;
-                    // if (readPtr === s.source.length) {
-                    //     listBodies.push(s.source.slice(0, readPtr));
-                    //     s.forward(readPtr);
-                    //     state = ListBlockMatchState.PushListElement;
-                    //     pleNextState = ListBlockMatchState.Final;
-                    // } else {
-                    //     s.forward(readPtr);
-                    //     state = ListBlockMatchState.FindStartNumber;
-                    //     fsnNextState = ListBlockMatchState.MatchBodyLine;
-                    // }
                     break;
                 case ListBlockMatchState.Final:
                     return listBlockEl;
@@ -380,7 +327,6 @@ export class ListBlockRule implements Rule {
                     throw new Error(`unknown state: ${state}`);
             }
         }
-        // return this.matchBlock(new ListBlock(ordered), s, ctx);
     };
 
     private matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
