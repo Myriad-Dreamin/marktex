@@ -202,6 +202,13 @@ export const texCommands: { [commandName: string]: commandFunc } = {
 
         return '<br/>' + tex(ctx, new StringStream(releaseVars(vars, 0)));
     },
+    R(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
+        if (ctx.underMathEnv) {
+            return '\\mathbb{R}' + releaseVars(vars, 0);
+        }
+
+        return "\\R" + tex(ctx, new StringStream(releaseVars(vars, 0)));
+    },
     indent(ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string): string {
         if (ctx.underMathEnv) {
             return '\\indent';

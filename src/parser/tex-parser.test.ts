@@ -15,7 +15,15 @@ describe('LaTeX parser ', () => {
             '\\newcommand{\\d}{\\mathmd{d}}' +
             '\\newcommand{\\qwq}[1]{qwq #1.},' +
             '\\d \\qwq{hh} \\textit{}, $\\awsl$, \\n \\t ')));
-    })
+    });
+    it('can parse math', () => {
+        console.log(parser.tex({
+            texCommands,
+            texCommandDefs: {},
+            underMathEnv: true,
+        }, new StringStream(
+            '\\R \\to \\R_+, \\forall \\alpha \\in N, \\sum_{T_{\\cdot, \\alpha} \\in \\R} P(T_{\\cdot, \\alpha}) = 1')));
+    });
 });
 
 
