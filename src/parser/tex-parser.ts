@@ -40,13 +40,13 @@ export class LaTeXInvalidCommandError extends LaTeXError {
 export type commandFunc = (
     ctx: TexContext, vars: TexCmdVar[], tex: (ctx: TexContext, s: StringStream) => string) => string;
 
-export interface TexContext {
+export type TexContext<TexExtends = any> = {
     // predefined commands
     readonly texCommands: { [commandName: string]: commandFunc | undefined }
     // command defined in markdown documents
     texCommandDefs: { [commandName: string]: commandFunc | undefined }
     underMathEnv?: boolean
-}
+} & TexExtends;
 
 export function traceError(_: TexContext, err: Error) {
     console.error(err);

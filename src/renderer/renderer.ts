@@ -166,3 +166,59 @@ export class Renderer implements IRenderer {
     }
 }
 
+interface LaTeXRendererExt {
+    sectionCounter: number;
+    ssCsCounter?: number;
+    subsectionCounter: number;
+
+    renderStack: string[];
+}
+
+export class LaTeXRenderer extends Renderer implements IRenderer {
+
+    public constructor(opts?: RenderOptions) {
+        super(opts);
+    }
+
+    initContext(ctx: RenderContext<LaTeXRendererExt>) {
+        ctx.texCtx.sectionCounter = 0;
+        ctx.texCtx.subsectionCounter = 0;
+        ctx.texCtx.ssCsCounter = undefined;
+        ctx.texCtx.renderStack = [];
+    }
+
+    renderHeaderBlock(ctx: RenderContext<LaTeXRendererExt>, headerBlockEl: HeaderBlock) {
+        ctx.html += "<h" + headerBlockEl.level + '>';
+        // todo: section => h[optK], subsection => h[optKK]
+        if (headerBlockEl.level === 1) {
+            ctx.texCtx.sectionCounter++;
+            ctx.html += '<span class="section-number">' + ctx.texCtx.sectionCounter.toString() + '</span>';
+        } else if (headerBlockEl.level === 3) {
+            // undefined => 0
+            if (ctx.texCtx.ssCsCounter != ctx.texCtx.sectionCounter) {
+                ctx.texCtx.subsectionCounter = 0;
+                ctx.texCtx.ssCsCounter = ctx.texCtx.sectionCounter;
+            }
+            ctx.texCtx.subsectionCounter++;
+            ctx.html += '<span class="section-number">' + ctx.texCtx.sectionCounter.toString()
+                + '.' + ctx.texCtx.subsectionCounter.toString() + '</span>';
+        }
+        ctx.driver.renderElements(ctx, headerBlockEl.inlineElements);
+        ctx.html += "</h" + headerBlockEl.level + ">";
+    }
+
+    renderParagraph(ctx: RenderContext<LaTeXRendererExt>, paragraphEl: Paragraph) {
+        ctx.html += '<p>';
+        if (!(ctx.texCtx.renderStack && ctx.texCtx.renderStack.indexOf('list') !== -1)) {
+            ctx.html += '<span class="indent"></span>';
+        }
+        ctx.driver.renderElements(ctx, paragraphEl.inlineElements);
+        ctx.html += '</p>';
+    }
+
+    renderListBlock(ctx: RenderContext<LaTeXRendererExt>, listBlockEl: ListBlock) {
+        ctx.texCtx.renderStack.push('list');
+        super.renderListBlock(ctx, listBlockEl);
+        ctx.texCtx.renderStack.pop();
+    }
+}

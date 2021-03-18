@@ -1,5 +1,5 @@
 import {Parser} from "./parser/parser";
-import {HighlightFunc, Renderer} from "./renderer/renderer";
+import {HighlightFunc, LaTeXRenderer, Renderer} from "./renderer/renderer";
 import {StringStream} from "./lib/stream";
 import {newBlockRules, newInlineRules, newRules} from "./rules";
 import {HTMLBlockOptions} from "./rules/std";
@@ -16,6 +16,7 @@ export interface MarkTeXParserOptions extends MarkTeXBasicEnableOptions {
 }
 
 export interface MarkTeXRendererOptions extends MarkTeXBasicEnableOptions {
+    renderStyle?: 'default' | 'gfm' | 'latex';
     highlight?: HighlightFunc;
     wrapCodeClassTag?: (language: string) => string;
 
@@ -40,7 +41,7 @@ const myriad = {
         return new Parser(newRules(options));
     },
     newRenderer(options?: MarkTeXRendererOptions): Renderer {
-        return new Renderer(options);
+        return options?.renderStyle === 'latex' ? new LaTeXRenderer(options) : new Renderer(options);
     },
     newRenderDriver(options?: MarkTeXRenderDriverOptions): RenderDriver {
         return new RenderDriver(
