@@ -4,4 +4,6 @@ node_modules/
 dist/*/**.test.ts
 dist/*/**.bench.ts
 a.html
+scripts/
+src/
 **.js~build
