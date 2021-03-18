@@ -21,7 +21,7 @@ import {
 } from "../token/token";
 import {Parser} from "../parser/parser";
 
-export interface RenderContext {
+export interface RenderContext<TexExtends = any> {
     readonly driver: IRenderDriverInner;
     readonly render: IRenderer;
     readonly parser: Parser;
@@ -31,7 +31,7 @@ export interface RenderContext {
 
     linkDefs: { [linkIdentifier: string]: LinkDefinition };
     html: string;
-    texCtx: TexContext;
+    texCtx: TexContext<TexExtends>;
 }
 
 export interface IRenderDriverInner {
@@ -48,7 +48,11 @@ export interface IRenderDriver extends IRenderDriverInner {
     // appendMiddleware(middleware: RenderMiddleware): void;
 }
 
-export interface IRenderer {
+export interface IRenderHook {
+    initContext?: (ctx: RenderContext) => void;
+}
+
+export interface IRenderer extends IRenderHook {
     renderQuotes(ctx: RenderContext, quotesEl: Quotes): void;
 
     renderHorizontal(ctx: RenderContext, horizontalEl: Horizontal): void;

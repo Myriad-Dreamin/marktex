@@ -21,8 +21,7 @@ import {
     Token,
     TokenType
 } from "../token/token";
-import {Renderer} from "../renderer/renderer";
-import {IRenderDriver, RenderContext} from "../proto";
+import {IRenderDriver, IRenderer, RenderContext} from "../proto";
 
 export type RenderMiddleware = (ctx: RenderContext) => void;
 
@@ -31,7 +30,7 @@ export interface RenderDriverOptions {
 }
 
 export class RenderDriver implements IRenderDriver {
-    protected renderer: Renderer;
+    protected renderer: IRenderer;
     protected parser: Parser;
     protected latexParser: LaTeXParser;
     protected texCommands: { [p: string]: commandFunc };
@@ -39,7 +38,7 @@ export class RenderDriver implements IRenderDriver {
 
     constructor(
         parser: Parser,
-        renderer: Renderer,
+        renderer: IRenderer,
         opts?: RenderDriverOptions) {
         this.parser = parser;
         this.renderer = renderer;
@@ -88,6 +87,9 @@ export class RenderDriver implements IRenderDriver {
                 }
             }
         };
+        if (this.renderer.initContext) {
+            this.renderer.initContext(ctx);
+        }
         ctx.next();
         return ctx.html;
     }
