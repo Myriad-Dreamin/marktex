@@ -308,7 +308,7 @@ function braceMatch(s: StringStream) {
 
 export class LaTeXParser {
 
-    public static readonly cmdNameRegex = /\\([a-zA-Z_]\w*)/;
+    public static readonly cmdNameRegex = /\\([a-zA-Z]+)/;
 
     tex(ctx: TexContext, s: StringStream): string {
         if (ctx.underMathEnv) {
