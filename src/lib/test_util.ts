@@ -3,8 +3,8 @@ import {StringStream} from "./stream";
 import {Parser} from "..";
 
 import * as chai from 'chai';
-import Benchmark = require("benchmark");
 import * as crypto from 'crypto';
+import Benchmark = require("benchmark");
 
 export const expect = chai.expect;
 export type elementMatcher = ({title, text, matchedLength: number, expectedElement}:
@@ -16,6 +16,11 @@ export function createContext(): Parser {
 }
 
 export function testTitleString(text: string): string {
+    text = text
+        .replace(/\n/g, '\\n')
+        .replace(/\t/g, '\\t')
+        .replace(/\v/g, '\\v')
+        .replace(/\f/g, '\\f');
     if (text.length < 15) {
         return text;
     }

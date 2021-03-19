@@ -19,7 +19,6 @@ import {
     Quotes
 } from "../token/token";
 import {unescapeBackSlash} from "../lib/escape";
-import List = Mocha.reporters.List;
 
 
 // Standard Markdown Rules
@@ -97,7 +96,7 @@ export class QuotesRule implements Rule {
 
         forwardRegexp(s, capturing);
         return new Quotes(ctx.parseBlockElements(
-            new StringStream(capturing[0].replace(/^ *> ?/gm, ''))
+            new StringStream(capturing[0].replace(/^ *>[\t\v\f\r ]?/gm, ''))
         ));
     };
 }
@@ -106,7 +105,7 @@ export class CodeBlockRule implements Rule {
     readonly name: string = "Standard/Block/CodeBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public static readonly regex: RegExp = /^((?: {4}|\t)[^\n]+(\n|$))+/;
+    public static readonly regex: RegExp = /^((?: {4}| {0,3}\t)[^\n]+(\n|$))+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = CodeBlockRule.regex.exec(s.source);
@@ -115,7 +114,7 @@ export class CodeBlockRule implements Rule {
         }
 
         forwardRegexp(s, capturing);
-        return new CodeBlock(capturing[0].replace(/^(?: {4}|\t)/gm, ''));
+        return new CodeBlock(capturing[0].replace(/^(?: {4}| {0,3}\t)/gm, ''));
     };
 }
 
@@ -123,7 +122,7 @@ export class HeaderBlockRule implements Rule {
     readonly name: string = "Standard/Block/HeaderBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly atxRegex: RegExp = /^(#{1,6}) ([^\n]*?)#*(?:\n|$)/;
+    public readonly atxRegex: RegExp = /^(#{1,6})[\t\f\v\r ]([^\n]*?)#*(?:\n|$)/;
     public readonly setextRegex: RegExp = /^([^\n]+)\n=+(?:\n|$)/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
@@ -206,8 +205,8 @@ export class ListBlockRule implements Rule {
      * [ ]{2}}
      * {+ }{1}
      */
-    public static readonly matchIndentedBody = /^(?:\s*?([\r\t\f\v ]{2,}[^\n]*(?:\n|$)))*/;
-    public static readonly replaceRegex = /^(?: {2}|\t)/gm;
+    public static readonly matchIndentedBody = /^(?:\s*?(?:(?:[\r\f\v ]{2,}|[\r\f\v ]*\t[\r\f\v ]*)[^\n]*(?:\n|$)))*/;
+    public static readonly replaceRegex = /^[ \v\r\f]?[ \v\r\f\t]/gm;
     private readonly enableGFMRules: boolean;
 
     constructor({enableGFMRules}: { enableGFMRules?: boolean }) {
@@ -216,7 +215,8 @@ export class ListBlockRule implements Rule {
 
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let lookAheadRegex = /^[\t\r\v\f ]{0,3}([*+-]|[0-9]+\.)[\t\r\v\f ]/;
+        // todo: \t?
+        let lookAheadRegex = /^[\r\v\f ]{0,3}([*+-]|[0-9]+\.)[\t\r\v\f ]/;
         let capturing = lookAheadRegex.exec(s.source);
         if (!capturing) {
             return undefined;
@@ -252,10 +252,10 @@ export class ListBlockRule implements Rule {
         const listBlockEl = new ListBlock(ordered);
 
         if (ordered) {
-            currMarker = currMarker.slice(0, currMarker.length-1);
-            lookAheadRegex = /^[\t\r\v\f ]?([0-9]+)\.[\t\r\v\f ]/;
+            currMarker = currMarker.slice(0, currMarker.length - 1);
+            lookAheadRegex = /^[\r\v\f ]?([0-9]+)\.[\t\r\v\f ]/;
         } else {
-            lookAheadRegex = /^[\t\r\v\f ]?([*+-])[\t\r\v\f ]/;
+            lookAheadRegex = /^[\r\v\f ]?([*+-])[\t\r\v\f ]/;
         }
 
 
@@ -285,7 +285,8 @@ export class ListBlockRule implements Rule {
                     break;
                 case ListBlockMatchState.PushListElement:
                     listBlockEl.listElements.push(new ListElement(currMarker, ctx.parseBlockElements(
-                        new StringStream(listBodies.join('').replace(ListBlockRule.replaceRegex, '')),
+                        new StringStream(listBodies[0] + listBodies.slice(1).join('')
+                            .replace(ListBlockRule.replaceRegex, '')),
                     ), newLineSeparated, undefined))
                     currMarker = nextMarker;
                     listBodies.splice(0, listBodies.length);
@@ -327,65 +328,6 @@ export class ListBlockRule implements Rule {
                     throw new Error(`unknown state: ${state}`);
             }
         }
-    };
-
-    private matchBlock(l: ListBlock, s: StringStream, ctx: RuleContext): ListBlock | undefined {
-        let nextMarker: string | undefined;
-        nextMarker = l.lookAhead(s);
-        if (!nextMarker) {
-            return undefined;
-        }
-        let blockContent: string, marker: string | undefined, lastSeparated = false;
-        for (blockContent = '', marker = nextMarker, nextMarker = undefined;
-             marker !== undefined;
-             blockContent = '', marker = nextMarker, nextMarker = undefined) {
-            // do {
-            //     let capturing = ListBlockRule.listBlockRegex.exec(s.source);
-            //     if (capturing === null) {
-            //         throw s.wrapErr(new Error("match block failed"));
-            //     }
-            //     forwardRegexp(s, capturing);
-            //     blockContent += capturing[0];
-            //
-            //
-            // } while (!s.eof && !l.lookAhead0(s) && (nextMarker = l.lookAhead(s)) === undefined);
-            let capturing = ListBlockRule.listBlockRegex.exec(s.source);
-            if (capturing === null) {
-                throw s.wrapErr(new Error("match block failed"));
-            }
-            forwardRegexp(s, capturing);
-            // blockContent += capturing[0];
-
-            blockContent = capturing[0].replace(ListBlockRule.replaceRegex, '');
-            let sep = blockContent.endsWith('\n\n');
-            if (sep) {
-                blockContent = blockContent.slice(0, blockContent.length - 2);
-            }
-
-            let sub = new StringStream(blockContent);
-            let selector = undefined;
-            if (this.enableGFMRules) {
-                let capturing = ListBlockRule.gfmSelectorRule.exec(sub.source);
-                if (capturing !== null && capturing[0].length != sub.source.length) {
-                    forwardRegexp(sub, capturing);
-                    selector = capturing[1];
-                }
-            }
-
-            let element = new ListElement(marker, ctx.parseBlockElements(
-                sub,
-            ), sep || lastSeparated, selector);
-            l.listElements.push(element);
-
-            lastSeparated = sep;
-
-            if (!nextMarker) {
-                if (l.lookAhead0(s)) {
-                    nextMarker = l.lookAhead(s);
-                }
-            }
-        }
-        return l;
     }
 }
 
