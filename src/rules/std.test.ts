@@ -467,30 +467,51 @@ describe("QuotesRule", () => {
     match({
         text: "> a\n",
         matchedLength: "> a\n".length,
-        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\n")])]),
+        expectedElement: new Quotes([
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
+        ]),
     });
     match({
         text: "> a\n> a\n",
         matchedLength: "> a\n> a\n".length,
-        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\na\n")])]),
+        expectedElement: new Quotes([
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
+        ]),
     });
     match({
         text: "> a\n\n> a\n",
         matchedLength: "> a\n".length,
-        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\n")])]),
+        expectedElement: new Quotes([
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
+        ]),
     });
     match({
         text: "> a\nqwq\n> a\n",
         matchedLength: "> a\nqwq\n> a\n".length,
-        expectedElement: new Quotes([new Paragraph([new InlinePlain("a\nqwq\na\n")])]),
+        expectedElement: new Quotes([
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
+            new Paragraph([new InlinePlain("qwq")]),
+            new NewLine("\n"),
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
+        ]),
     });
     match({
         text: "> a\nqwq\n>\n> a\n",
         matchedLength: "> a\nqwq\n>\n> a\n".length,
         expectedElement: new Quotes([
-            new Paragraph([new InlinePlain("a\nqwq")]),
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
+            new Paragraph([new InlinePlain("qwq")]),
             new NewLine('\n\n'),
-            new Paragraph([new InlinePlain("a\n")])
+            new Paragraph([new InlinePlain("a")]),
+            new NewLine("\n"),
         ]),
     });
     notMatch({text: "\n"});
@@ -503,6 +524,7 @@ describe("ListBlockRule", () => {
     let match: elementMatcher = itWillMatchElement(rule);
     let notMatch: textAcceptor = itWillNotMatchElement(rule);
 
+    // todo
     match({
         text: "* ",
         matchedLength: "* ".length,
