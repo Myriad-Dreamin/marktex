@@ -180,5 +180,6 @@ describe('gfm spec (2.2 Tabs) 1~11', () => {
 
 })
 
-
+// 2.3 Insecure characters todo
+// For security reasons, the Unicode character U+0000 must be replaced with the REPLACEMENT CHARACTER (U+FFFD).
 
