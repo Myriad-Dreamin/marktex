@@ -285,7 +285,7 @@ export class ListBlockRule implements Rule {
                     break;
                 case ListBlockMatchState.PushListElement:
                     listBlockEl.listElements.push(new ListElement(currMarker, ctx.parseBlockElements(
-                        new StringStream(listBodies[0] + listBodies.slice(1).join('')
+                        new StringStream((listBodies[0] || '') + listBodies.slice(1).join('')
                             .replace(ListBlockRule.replaceRegex, '')),
                     ), newLineSeparated, undefined))
                     currMarker = nextMarker;
