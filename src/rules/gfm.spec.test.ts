@@ -178,8 +178,27 @@ describe('gfm spec (2.2 Tabs) 1~11', () => {
         expectedElement: new Horizontal(),
     });
 
-})
+});
 
 // 2.3 Insecure characters todo
 // For security reasons, the Unicode character U+0000 must be replaced with the REPLACEMENT CHARACTER (U+FFFD).
 
+
+describe('gfm spec 4.10Tables (extension)', () => {
+    /**
+     * alert!: different from gfm/commonMark: \t is not considered as [    ]
+     */
+
+    let rule: Rule;
+    let match: elementMatcher;
+
+    rule = new CodeBlockRule();
+    match = itWillMatchElement(rule);
+
+    // https://github.github.com/gfm/#example-1
+    match({
+        text: '| foo | bar |\n| --- | --- |\n| baz | bim |',
+        matchedLength: '| foo | bar |\n| --- | --- |\n| baz | bim |'.length,
+        expectedElement: new Horizontal(),
+    });
+});
