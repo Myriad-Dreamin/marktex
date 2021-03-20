@@ -67,6 +67,8 @@ describe('link/image regex', () => {
     itWillMatch({text: '![X](Y)', imageMark: '!', linkName: 'X', href: 'Y'});
     itWillMatch({text: '![](Y "Z")', imageMark: '!', linkName: '', href: 'Y', title: 'Z'});
     itWillMatch({text: '![](Y)', imageMark: '!', linkName: '', href: 'Y'});
+    //    [this comment by John
+    //     Gruber](http://article.gmane.org/gmane.text.markdown.general/1997)
 });
 
 describe("InlinePlainExceptSpecialMarksRule", () => {

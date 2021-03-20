@@ -19,6 +19,10 @@ enum TokenType {
 
     MathBlock,
     LatexBlock,
+
+    TableBlock,
+
+    StrikeThrough,
 }
 
 // noinspection JSUnusedGlobalSymbols
@@ -534,6 +538,17 @@ class Emphasis implements InlineElement {
     }
 }
 
+
+class StrikeThrough implements InlineElement {
+    readonly token_type = TokenType.StrikeThrough;
+    public content: string;
+
+    constructor(content: string) {
+        this.content = content;
+    }
+}
+
+
 class InlineCode implements InlineElement {
     readonly token_type = TokenType.InlineCode;
     public content: string;
@@ -541,6 +556,15 @@ class InlineCode implements InlineElement {
     constructor(content: string) {
         this.content = content;
     }
+}
+
+class TableBlock implements BlockElement {
+    readonly token_type = TokenType.TableBlock;
+
+    constructor(
+        public readonly heads: string[], 
+        public headProps: number[], 
+        public dataRows: string[][]) {}
 }
 
 
@@ -565,11 +589,13 @@ export {
     HeaderBlock,
     MathBlock,
     LaTeXBlock,
+    TableBlock,
 
     InlinePlain,
     Link,
     ImageLink,
     Emphasis,
+    StrikeThrough,
     InlineCode,
 
     StdBlockTokenCount,

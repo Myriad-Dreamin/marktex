@@ -538,7 +538,7 @@ export class EmphasisRule implements Rule {
     readonly name: string = "Standard/Inline/Emphasis";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:(_{1,2})((?:\\\\|\\_|[^_])+)(_{1,2})|(\*{1,2})((?:\\\\|\\\*|[^*])+)(\*{1,2}))/;
+    public readonly regex: RegExp = /^(?:(_{1,2})((?:\\\\|\\_|[^_])+)(_{1,2})|(\*{1,2})((?:\\\\|\\\*|[^*])+)(\*{1,2})/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
