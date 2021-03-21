@@ -1,6 +1,6 @@
 import {Rule, RuleContext} from "./rule";
 import {forwardRegexp, StringStream} from "../lib/stream";
-import {CodeBlock, MaybeToken, StrikeThrough, TableBlock} from "../token/token";
+import {CodeBlock, InlineElement, MaybeToken, StrikeThrough, TableBlock} from '../token/token';
 import { unescapeBackSlash } from "../lib/escape";
 
 export class GFMFencedCodeBlockRule implements Rule {
@@ -28,10 +28,10 @@ export class GFMTableBlockRule implements Rule {
     readonly name: string = "GFMTableBlock";
     readonly description: string = "GFM Markdown Block Rule";
 
-    public static readonly tableHeadRegex: RegExp = /^\s*\|([^\n]*)\|\s*\n\s*\|?([\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff\-|:]+)\s*\n/;
-    public static readonly dataRow: RegExp = /^[\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*\|([^\n]*)\|[\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*\n/;
-    match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = GFMTableBlockRule.tableHeadRegex.exec(s.source);
+    public readonly tableHeadRegex: RegExp = /^\s*\|([^\n]*)\|\s*\n\s*\|?([\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff\-|:]+)\s*(\n|$)/;
+    public readonly dataRow: RegExp = /^[\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*\|?([^\n]*)[\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*(\n|$)/;
+    match(s: StringStream, ctx: RuleContext): MaybeToken {
+        let capturing = this.tableHeadRegex.exec(s.source);
         if (!capturing) {
             return undefined;
         }
@@ -41,22 +41,29 @@ export class GFMTableBlockRule implements Rule {
             return undefined;
         }
         forwardRegexp(s, capturing);
-        const table = new TableBlock(heads, headProps, []);
-        for (;;) {
-            let capturing = GFMTableBlockRule.tableHeadRegex.exec(s.source);
+        const table = new TableBlock(heads.map(head => ctx.parseInlineElements(new StringStream(head))), headProps, []);
+        while (s.source.length) {
+            capturing = this.dataRow.exec(s.source);
             if (!capturing) {
                 return table;
             }
-            table.dataRows.push(this.parseDataRow(heads.length, capturing[1]));
-            forwardRegexp(s, capturing);
+            const dataRow = this.parseDataRow(ctx, heads.length, capturing[1]);
+            if (dataRow) {
+                table.dataRows.push(dataRow);
+                forwardRegexp(s, capturing);
+            } else {
+                return table;
+            }
         }
+        return table;
     }
     
-    parseDataRow(headsCount: number, s: string): string[] {
+    parseDataRow(ctx: RuleContext, headsCount: number, s: string): InlineElement[][] | undefined {
         const dataRow: string[] = new Array(headsCount).fill('');
         let norm: boolean = false;
         const itemParts: string[] = [];
-        for(let i = 0, li = 0, dri = 0; i < s.length; i++) {
+        let dri = 0, li = 0;
+        for(let i = 0; i < s.length; i++) {
             if (norm) {
                 if (s[i] === '|') {
                     if (!itemParts.length) {
@@ -66,7 +73,7 @@ export class GFMTableBlockRule implements Rule {
                         itemParts.splice(0, itemParts.length);
                     }
                     if (dri === headsCount) {
-                        return dataRow;
+                        return dataRow.map(dataColumn => ctx.parseInlineElements(new StringStream(dataColumn)));
                     }
                     li = i+1;
                 } else if (s[i] === '\\') {
@@ -80,23 +87,38 @@ export class GFMTableBlockRule implements Rule {
                 norm = true;
             }
         }
-        return dataRow;
+        if (dri === 0) {
+            return undefined;
+        }
+        if (!itemParts.length) {
+            dataRow[dri++] = s.slice(li, s.length);
+        } else {
+            dataRow[dri++] = itemParts.join('') + s.slice(li, s.length);
+        }
+        return dataRow.map(dataColumn => ctx.parseInlineElements(new StringStream(dataColumn)));
     }
     parseDelimiterRow(headsCount: number, s: string): number[] | undefined {
         const hps: number[] = [];
-        let hp = 0;
+        let hp: number = -1;
         for (let i = 0; i < s.length;i++) {
             if (s[i] === '|') {
-                hps.push(hp);
+                hps.push(hp < 0 ? 0 : hp);
                 if (hps.length > headsCount) {
                     return undefined;
                 }
-                hp = 0;
+                hp = -1;
             } else if (s[i] === ':') {
-                hp = (hp << 1) | 1;
+                hp = (hp < 0 ? 0 : hp) | 1;
             } else if (s[i] === '-' && hp === 1) {
                 hp = (hp << 1);
             }
+        }
+        if (hps.length === headsCount && hp >= 0) {
+            return undefined;
+        }
+        if (hp >= 0) hps.push(hp);
+        if (hps.length < headsCount) {
+            return undefined;
         }
         return hps;
     }
@@ -111,7 +133,8 @@ export class GFMTableBlockRule implements Rule {
         if (s[0] === '|') {
             s = s.slice(1);
         }
-        for(let i = 0, li = 0; i < s.length; i++) {
+        let li = 0;
+        for(let i = 0; i < s.length; i++) {
             if (norm) {
                 if (s[i] === '|') {
                     if (!head.length) {
@@ -131,6 +154,11 @@ export class GFMTableBlockRule implements Rule {
                 }
                 norm = true;
             }
+        }
+        if (!head.length) {
+            heads.push(s.slice(li, s.length));
+        } else {
+            heads.push(head.join('') + s.slice(li, s.length));
         }
         return heads;
     }

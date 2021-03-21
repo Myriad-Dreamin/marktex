@@ -1,15 +1,15 @@
 import {CodeBlockRule, HeaderBlockRule, HorizontalRule, ListBlockRule, QuotesRule} from "./std";
 import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from '../lib/test_util';
 import {
-    CodeBlock,
+    CodeBlock, Emphasis,
     HeaderBlock,
-    Horizontal,
+    Horizontal, InlineCode,
     InlinePlain,
     ListBlock,
     ListElement,
     NewLine,
     Paragraph,
-    Quotes, StrikeThrough
+    Quotes, StrikeThrough, TableBlock
 } from '../token/token';
 import {Rule} from "./rule";
 import {GFMStrikeThroughRule, GFMTableBlockRule} from './gfm';
@@ -188,15 +188,111 @@ describe('gfm spec (2.2 Tabs) 1~11', () => {
 describe('gfm spec 4.10Tables (extension)', () => {
     let rule: Rule;
     let match: elementMatcher;
+    let notMatch: textAcceptor;
 
     rule = new GFMTableBlockRule();
     match = itWillMatchElement(rule);
+    notMatch = itWillNotMatchElement(rule);
 
-    // https://github.github.com/gfm/#example-1
+    // https://github.github.com/gfm/#example-198
     match({
         text: '| foo | bar |\n| --- | --- |\n| baz | bim |',
         matchedLength: '| foo | bar |\n| --- | --- |\n| baz | bim |'.length,
-        expectedElement: new Horizontal(),
+        expectedElement: new TableBlock([[new InlinePlain(" foo ")], [new InlinePlain(" bar ")], ], [0, 0], [
+            [[new InlinePlain(" baz ")], [new InlinePlain(" bim ")]],
+        ]),
+    });
+
+    // https://github.github.com/gfm/#example-199
+    match({
+        text: '| abc | defghi |\n' +
+            ':-: | -----------:\n' +
+            'bar | baz',
+        matchedLength: ('| abc | defghi |\n' +
+            ':-: | -----------:\n' +
+            'bar | baz').length,
+        expectedElement: new TableBlock([[new InlinePlain(" abc ")], [new InlinePlain(" defghi ")], ], [3, 1], [
+            [[new InlinePlain("bar ")], [new InlinePlain(" baz")]],
+        ]),
+    });
+
+    // https://github.github.com/gfm/#example-200
+    match({
+        text: '| f\\|oo  |\n' +
+            '| ------ |\n' +
+            '| b `\\|` az |\n' +
+            '| b **\\|** im |',
+        matchedLength: ('| f\\|oo  |\n' +
+            '| ------ |\n' +
+            '| b `\\|` az |\n' +
+            '| b **\\|** im |').length,
+        expectedElement: new TableBlock([[new InlinePlain(" f|oo  ")]], [0], [
+            [[new InlinePlain(" b "), new InlineCode("|"), new InlinePlain(" az ")]],
+            [[new InlinePlain(" b "), new Emphasis("|", 2), new InlinePlain(" im ")]],
+        ]),
+    });
+
+    // https://github.github.com/gfm/#example-201
+    match({
+        text: '| abc | def |\n' +
+            '| --- | --- |\n' +
+            '| bar | baz |\n' +
+            '> bar',
+        matchedLength: ('| abc | def |\n' +
+            '| --- | --- |\n' +
+            '| bar | baz |\n').length,
+        expectedElement: new TableBlock([[new InlinePlain(" abc ")], [new InlinePlain(" def ")], ], [0, 0], [
+            [[new InlinePlain(" bar ")], [new InlinePlain(" baz ")]],
+        ]),
+    });
+
+    // https://github.github.com/gfm/#example-202
+    match({
+        text: '| abc | def |\n' +
+            '| --- | --- |\n' +
+            '| bar | baz |\n' +
+            'bar\n' +
+            '\n' +
+            'bar\n',
+        matchedLength: ('| abc | def |\n' +
+            '| --- | --- |\n' +
+            '| bar | baz |\n').length,
+        expectedElement: new TableBlock([[new InlinePlain(" abc ")], [new InlinePlain(" def ")], ], [0, 0], [
+            [[new InlinePlain(" bar ")], [new InlinePlain(" baz ")]],
+        ]),
+    });
+
+    // https://github.github.com/gfm/#example-203
+    notMatch({
+        text: '| abc | def |\n' +
+            '| --- |\n' +
+            '| bar |',
+    });
+
+    // https://github.github.com/gfm/#example-204
+    match({
+        text: '| abc | def |\n' +
+            '| --- | --- |\n' +
+            '| bar |\n' +
+            '| bar | baz | boo |',
+        matchedLength: ('| abc | def |\n' +
+            '| --- | --- |\n' +
+            '| bar |\n' +
+            '| bar | baz | boo |').length,
+        expectedElement: new TableBlock([[new InlinePlain(" abc ")], [new InlinePlain(" def ")], ], [0, 0], [
+            [[new InlinePlain(" bar ")], []],
+            [[new InlinePlain(" bar ")], [new InlinePlain(" baz ")]],
+        ]),
+    });
+
+    // https://github.github.com/gfm/#example-205
+    match({
+        text: '| abc | def |\n' +
+            '| --- | --- |\n',
+        matchedLength: ('| abc | def |\n' +
+            '| --- | --- |\n').length,
+        expectedElement: new TableBlock([[new InlinePlain(" abc ")], [new InlinePlain(" def ")], ], [0, 0], [
+        ]),
     });
 });
 

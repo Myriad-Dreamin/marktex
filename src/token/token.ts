@@ -562,9 +562,9 @@ class TableBlock implements BlockElement {
     readonly token_type = TokenType.TableBlock;
 
     constructor(
-        public readonly heads: string[], 
+        public readonly heads: InlineElement[][],
         public headProps: number[], 
-        public dataRows: string[][]) {}
+        public dataRows: InlineElement[][][]) {}
 }
 
 
