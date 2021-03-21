@@ -16,7 +16,7 @@ import {
     QuotesRule
 } from "./rules/std";
 import {InlineLatexCommandRule, InlineMathRule, LatexBlockRule, MathBlockRule, ParagraphRule} from "./rules/latex";
-import {GFMFencedCodeBlockRule, GFMStrikeThroughRule} from './rules/gfm';
+import {GFMFencedCodeBlockRule, GFMStrikeThroughRule, GFMTableBlockRule} from './rules/gfm';
 
 export {RuleContext, Rule};
 
@@ -64,7 +64,7 @@ export function newBlockRules(
 
     // default enable
     if (opts?.enableGFMRules !== false) {
-        rules0.push(new GFMFencedCodeBlockRule());
+        rules0.push(new GFMTableBlockRule(), new GFMFencedCodeBlockRule());
     }
 
     if (opts?.enableHtml) {
