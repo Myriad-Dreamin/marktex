@@ -40,6 +40,29 @@ import {unescapeBackSlash} from "../lib/escape";
 //     Code
 //
 
+function maybeForward(s: StringStream, r: RegExp): RegExpExecArray | undefined {
+    const capturing = r.exec(s.source);
+    if (!capturing) return undefined;
+    forwardRegexp(s, capturing);
+    return capturing;
+}
+
+function maybePickRegexParts(s: StringStream, r: RegExp): StringStream[] | undefined {
+    let capturing = r.exec(s.source);
+    if (capturing === null) {
+        return undefined;
+    }
+
+    const res = [];
+    for (let i = 1; i < capturing.length; i++) {
+        res.push(s.breakAt(capturing[i]?.length || 0));
+    }
+    return res;
+}
+
+function maybeTrue(b: unknown): true | undefined {
+    return b ? true : undefined;
+}
 
 export class NewLineRule implements Rule {
     readonly name: string = "Standard/Block/NewLine";
@@ -48,37 +71,23 @@ export class NewLineRule implements Rule {
     public readonly regex: RegExp = /^\n+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new NewLine(capturing[0]);
+        const capturing = maybeForward(s, this.regex);
+        return capturing && new NewLine(capturing[0]);
     };
 }
 
 export class ParagraphRule implements Rule {
-    readonly name: string = "Paragraph";
+    readonly name: string = "Standard/Block/Paragraph";
     readonly description: string = "Standard Markdown Block Rule";
 
     // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
 
     constructor() {
-
     }
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        if (s.source[0] == '\n') {
-            return undefined;
-        }
-        const i = s.source.indexOf('\n');
-        if (i === -1) {
-            return new Paragraph(ctx.parseInlineElements(s));
-        }
-        let capturing = s.source.slice(0, i);
-        s.forward(i);
-        return new Paragraph(ctx.parseInlineElements(new StringStream(capturing)));
+        return maybeTrue(s.source.length > 0 && s.source[0] != '\n') && new Paragraph(ctx.parseInlineElements(
+            s.maybeBreakAt(s.source.indexOf('\n'))));
     }
 }
 
@@ -89,13 +98,9 @@ export class QuotesRule implements Rule {
     public readonly regex: RegExp = /^( *>[^\n]*(?:\n[^\n]+)*\n?)+/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new Quotes(ctx.parseBlockElements(
+        const capturing = maybeForward(s, this.regex);
+        return capturing && new Quotes(ctx.parseBlockElements(
+            // todo slice
             new StringStream(capturing[0].replace(/^ *>[\t\v\f\r ]?/gm, ''))
         ));
     };
@@ -105,16 +110,12 @@ export class CodeBlockRule implements Rule {
     readonly name: string = "Standard/Block/CodeBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public static readonly regex: RegExp = /^((?: {4}| {0,3}\t)[^\n]+(\n|$))+/;
+    public readonly regex: RegExp = /^((?: {4}| {0,3}\t)[^\n]+(\n|$))+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = CodeBlockRule.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new CodeBlock(capturing[0].replace(/^(?: {4}| {0,3}\t)/gm, ''));
+        const capturing = maybeForward(s, this.regex);
+        // todo slice
+        return capturing && new CodeBlock(capturing[0].replace(/^(?: {4}| {0,3}\t)/gm, ''));
     };
 }
 
@@ -122,29 +123,21 @@ export class HeaderBlockRule implements Rule {
     readonly name: string = "Standard/Block/HeaderBlock";
     readonly description: string = "Standard Markdown Block Rule";
 
-    public readonly atxRegex: RegExp = /^(#{1,6})[\t\f\v\r ]([^\n]*?)#*(?:\n|$)/;
-    public readonly setextRegex: RegExp = /^([^\n]+)\n=+(?:\n|$)/;
+    public readonly atxRegex: RegExp = /^(#{1,6})([\t\f\v\r ])([^\n]*?)(#*(?:\n|$))/;
+    public readonly setextRegex: RegExp = /^([^\n]+)(\n=+(?:\n|$))/;
 
     match(s: StringStream, ctx: RuleContext): MaybeToken {
         return this.matchATX(s, ctx) || this.matchSetext(s, ctx);
     };
 
     matchATX(s: StringStream, ctx: RuleContext): MaybeToken {
-        let capturing = this.atxRegex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-        forwardRegexp(s, capturing);
-        return new HeaderBlock(ctx.parseInlineElements(new StringStream(capturing[2])), capturing[1].length);
+        const capturing = maybePickRegexParts(s, this.atxRegex);
+        return capturing && new HeaderBlock(ctx.parseInlineElements(capturing[2]), capturing[0].length);
     }
 
     matchSetext(s: StringStream, ctx: RuleContext): MaybeToken {
-        let capturing = this.setextRegex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-        forwardRegexp(s, capturing);
-        return new HeaderBlock(ctx.parseInlineElements(new StringStream(capturing[1])), 1);
+        const capturing = maybePickRegexParts(s, this.setextRegex);
+        return capturing && new HeaderBlock(ctx.parseInlineElements(capturing[0]), 1);
     }
 }
 
@@ -155,13 +148,8 @@ export class HorizontalRule implements Rule {
     public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})(?:\n|$)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new Horizontal();
+        const capturing = maybeForward(s, this.regex);
+        return capturing && new Horizontal();
     };
 }
 
@@ -453,13 +441,8 @@ export class InlinePlainExceptSpecialMarksRule implements Rule {
     public readonly regex: RegExp = /^(?:\\[!`_*\[$\\]|[^<!`_*\[$\\])+/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new InlinePlain(unescapeBackSlash(capturing[0]));
+        const capturing = maybeForward(s, this.regex);
+        return capturing && new InlinePlain(unescapeBackSlash(capturing[0]));
     };
 }
 
@@ -470,13 +453,8 @@ export class InlinePlainRule implements Rule {
     public readonly regex: RegExp = /^(?:[!`_*\[$\\<](?:\\[!`_*\[$\\]|[^<!`_*\[$\\])*|(?:\\[!`_*\[$\\]|[^<!`_*\[$\\])+)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new InlinePlain(unescapeBackSlash(capturing[0]));
+        const capturing = maybeForward(s, this.regex);
+        return capturing && new InlinePlain(unescapeBackSlash(capturing[0]));
     };
 }
 
@@ -494,13 +472,9 @@ export class LinkOrImageRule implements Rule {
     };
 
     matchInline(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-        forwardRegexp(s, capturing);
+        const capturing = maybeForward(s, this.regex);
+        if (!capturing) return undefined;
         if (capturing[1] !== '') {
-
             return new ImageLink(unescapeBackSlash(capturing[2]), capturing[3], true, capturing[4]);
         } else {
             return new Link(unescapeBackSlash(capturing[2]), capturing[3], true, capturing[4]);
@@ -508,11 +482,8 @@ export class LinkOrImageRule implements Rule {
     }
 
     matchAutoLink(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.autoLinkRegex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-        forwardRegexp(s, capturing);
+        const capturing = maybeForward(s, this.autoLinkRegex);
+        if (!capturing) return undefined;
         if (capturing[1] !== undefined) {
             return new Link(capturing[1], 'mailto:' + capturing[1], true);
         } else {
@@ -521,11 +492,8 @@ export class LinkOrImageRule implements Rule {
     }
 
     matchRef(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.refRegex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-        forwardRegexp(s, capturing);
+        const capturing = maybeForward(s, this.refRegex);
+        if (!capturing) return undefined;
         if (capturing[1] !== '') {
             return new ImageLink(capturing[2], capturing[3], false);
         } else {
@@ -538,7 +506,7 @@ export class EmphasisRule implements Rule {
     readonly name: string = "Standard/Inline/Emphasis";
     readonly description: string = "Standard Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(?:(_{1,2})((?:\\\\|\\_|[^_])+)(_{1,2})|(\*{1,2})((?:\\\\|\\\*|[^*])+)(\*{1,2})/;
+    public readonly regex: RegExp = /^(?:(_{1,2})((?:\\\\|\\_|[^_])+)(_{1,2})|(\*{1,2})((?:\\\\|\\\*|[^*])+)(\*{1,2}))/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
@@ -567,12 +535,7 @@ export class InlineCodeRule implements Rule {
     public readonly regex: RegExp = /^(?:``([^`\n\r\u2028\u2029](?:\\\\|\\`|`?[^`\n\r\u2028\u2029])*)``|`((?:\\\\|\\`|[^`\n\r\u2028\u2029])+)`)/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
-        let capturing = this.regex.exec(s.source);
-        if (capturing === null) {
-            return undefined;
-        }
-
-        forwardRegexp(s, capturing);
-        return new InlineCode(unescapeBackSlash(capturing[1] || capturing[2]));
+        const capturing = maybeForward(s, this.regex);
+        return capturing && new InlineCode(unescapeBackSlash(capturing[1] || capturing[2]));
     };
 }

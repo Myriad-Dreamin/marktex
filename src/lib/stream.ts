@@ -20,15 +20,29 @@ class StringStream {
     private line: number;
     private column: number;
 
-    constructor(source: string) {
+    constructor(source: string, line: number = 1, column: number = 0) {
         this._source = source;
         this._pos = 0;
-        this.line = 1;
-        this.column = 0;
+        this.line = line;
+        this.column = column;
+    }
+
+    breakAt(n: number) {
+        const stream = new StringStream(this.source.slice(0, n), this.line, this.column);
+        this.forward(n);
+        return stream;
+    }
+
+    maybeBreakAt(n: number) {
+        return n === -1 ? this : this.breakAt(n);
     }
 
     get source(): string {
         return this._source;
+    }
+
+    get length(): number {
+        return this._source.length;
     }
 
     at(index: number): string {
@@ -78,6 +92,6 @@ class StringStream {
 
 export {StringStream};
 
-export function forwardRegexp(s: StringStream, capturing: RegExpExecArray) {
-    s.forward(capturing[0].length)
+export function forwardRegexp(s: StringStream, capturing: RegExpExecArray): void {
+    s.forward(capturing[0].length);
 }
