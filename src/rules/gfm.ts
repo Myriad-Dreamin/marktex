@@ -140,7 +140,7 @@ export class GFMStrikeThroughRule implements Rule {
     readonly name: string = "Standard/Inline/StrikeThrough";
     readonly description: string = "GFM Markdown Inline Rule";
 
-    public readonly regex: RegExp = /^(~{2})((?:\\\\|\\~|[^~])+)(~{2}))/;
+    public readonly regex: RegExp = /^(~{2})((?:\\\\|\\~|[^~\\])+)(~{2})/;
 
     match(s: StringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);

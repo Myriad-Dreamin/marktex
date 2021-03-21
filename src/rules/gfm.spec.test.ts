@@ -1,5 +1,5 @@
 import {CodeBlockRule, HeaderBlockRule, HorizontalRule, ListBlockRule, QuotesRule} from "./std";
-import {elementMatcher, itWillMatchElement} from "../lib/test_util";
+import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from '../lib/test_util';
 import {
     CodeBlock,
     HeaderBlock,
@@ -9,9 +9,10 @@ import {
     ListElement,
     NewLine,
     Paragraph,
-    Quotes
-} from "../token/token";
+    Quotes, StrikeThrough
+} from '../token/token';
 import {Rule} from "./rule";
+import {GFMStrikeThroughRule, GFMTableBlockRule} from './gfm';
 
 describe('gfm spec (2.2 Tabs) 1~11', () => {
     /**
@@ -185,14 +186,10 @@ describe('gfm spec (2.2 Tabs) 1~11', () => {
 
 
 describe('gfm spec 4.10Tables (extension)', () => {
-    /**
-     * alert!: different from gfm/commonMark: \t is not considered as [    ]
-     */
-
     let rule: Rule;
     let match: elementMatcher;
 
-    rule = new CodeBlockRule();
+    rule = new GFMTableBlockRule();
     match = itWillMatchElement(rule);
 
     // https://github.github.com/gfm/#example-1
@@ -201,4 +198,30 @@ describe('gfm spec 4.10Tables (extension)', () => {
         matchedLength: '| foo | bar |\n| --- | --- |\n| baz | bim |'.length,
         expectedElement: new Horizontal(),
     });
+});
+
+describe('gfm spec 6.5 Strikethrough (extension)\n', () => {
+    let rule: Rule;
+    let match: elementMatcher;
+    let notMatch: textAcceptor;
+
+    rule = new GFMStrikeThroughRule();
+    match = itWillMatchElement(rule);
+    notMatch = itWillNotMatchElement(rule);
+
+    // https://github.github.com/gfm/#example-491
+    match({
+        text: '~~Hi~~ Hello, world!',
+        matchedLength: '~~Hi~~'.length,
+        expectedElement: new StrikeThrough("Hi"),
+    });
+
+    // https://github.github.com/gfm/#example-492
+    notMatch({
+        text: '~~has a\n'
+    });
+    notMatch({
+        text: 'new paragraph~~.',
+    });
+
 });
