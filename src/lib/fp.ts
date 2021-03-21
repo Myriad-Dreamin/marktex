@@ -11,7 +11,7 @@ export function Id<I>(i: I) {
 export type MaybeF<I> = (i: I) => Maybe<I>;
 
 // maybeCompose = MaybeF
-export function maybeCompose<I>(...fns: any) {
+export function maybeCompose<I>(...fns: MaybeF<I>[]) {
     return (fns.length == 0) ? Id : (fns.length == 1 ? fns[0] : function (i: I) {
         let j: I | undefined = fns[fns.length - 1](i);
         for (let k = fns.length - 2; k >= 0; k--) {
