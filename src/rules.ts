@@ -16,7 +16,7 @@ import {
     QuotesRule
 } from "./rules/std";
 import {InlineLatexCommandRule, InlineMathRule, LatexBlockRule, MathBlockRule, ParagraphRule} from "./rules/latex";
-import {GFMFencedCodeBlockRule} from "./rules/gfm";
+import {GFMFencedCodeBlockRule, GFMStrikeThroughRule} from './rules/gfm';
 
 export {RuleContext, Rule};
 
@@ -32,6 +32,7 @@ export interface CreateBlockRuleOptions {
 
 export interface CreateInlineRuleOptions {
     enableLaTeX?: boolean;
+    enableGFMRules?: boolean;
 }
 
 export interface CreateRuleOptions extends CreateInlineRuleOptions, CreateBlockRuleOptions {
@@ -91,6 +92,10 @@ export function newInlineRules(
     // default not enable
     if (opts?.enableLaTeX !== false) {
         rules0.push(new InlineLatexCommandRule());
+    }
+
+    if (opts?.enableGFMRules !== false) {
+        rules0.push(new GFMStrikeThroughRule());
     }
 
     return [...rules0, ...rules1];
