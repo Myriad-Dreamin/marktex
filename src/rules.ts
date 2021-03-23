@@ -13,9 +13,10 @@ import {
     LinkOrImageRule,
     ListBlockRule,
     NewLineRule,
+    ParagraphRule,
     QuotesRule
 } from "./rules/std";
-import {InlineLatexCommandRule, InlineMathRule, LatexBlockRule, MathBlockRule, ParagraphRule} from "./rules/latex";
+import {InlineLatexCommandRule, InlineMathRule, LatexBlockRule, MathBlockRule, LazyParagraphRule} from "./rules/latex";
 import {GFMFencedCodeBlockRule, GFMStrikeThroughRule, GFMTableBlockRule} from './rules/gfm';
 
 export {RuleContext, Rule};
@@ -28,6 +29,7 @@ export interface CreateBlockRuleOptions {
     enableLaTeX?: boolean;
     enableGFMRules?: boolean;
     HTMLBlockOptions?: HTMLBlockOptions;
+    lazyParagraph?: boolean;
 }
 
 export interface CreateInlineRuleOptions {
@@ -59,7 +61,7 @@ export function newBlockRules(
     ];
 
     let rules2: Rule[] = [
-        new ParagraphRule(),
+        opts?.lazyParagraph === false ? new ParagraphRule() : new LazyParagraphRule(),
     ];
 
     // default enable

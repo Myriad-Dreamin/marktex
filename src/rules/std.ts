@@ -1,5 +1,5 @@
 import {Rule, RuleContext} from "./rule";
-import {forwardRegexp, StringStream} from "../lib/stream";
+import {forwardRegexp, IStringStream, StringStream} from "../lib/stream";
 import {
     CodeBlock,
     Emphasis,
@@ -8,6 +8,7 @@ import {
     HTMLBlock,
     ImageLink,
     InlineCode,
+    InlineParagraph,
     InlinePlain,
     Link,
     LinkDefinition,
@@ -40,14 +41,14 @@ import {unescapeBackSlash} from "../lib/escape";
 //     Code
 //
 
-function maybeForward(s: StringStream, r: RegExp): RegExpExecArray | undefined {
+function maybeForward(s: IStringStream, r: RegExp): RegExpExecArray | undefined {
     const capturing = r.exec(s.source);
     if (!capturing) return undefined;
     forwardRegexp(s, capturing);
     return capturing;
 }
 
-function maybePickRegexParts(s: StringStream, r: RegExp): StringStream[] | undefined {
+function maybePickRegexParts(s: IStringStream, r: RegExp): IStringStream[] | undefined {
     let capturing = r.exec(s.source);
     if (capturing === null) {
         return undefined;
@@ -70,7 +71,9 @@ export class NewLineRule implements Rule {
 
     public readonly regex: RegExp = /^\n+/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    public first: string[] = [];
+
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         return capturing && new NewLine(capturing[0]);
     };
@@ -85,9 +88,23 @@ export class ParagraphRule implements Rule {
     constructor() {
     }
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
-        return maybeTrue(s.source.length > 0 && s.source[0] != '\n') && new Paragraph(ctx.parseInlineElements(
-            s.maybeBreakAt(s.source.indexOf('\n'))));
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
+        return maybeTrue(s.source.length > 0 && s.source[0] != '\n') && new Paragraph(
+            ctx.parseInlineElements(s.maybeBreakAt(s.source.indexOf('\n'))));
+    }
+}
+
+export class LazyParagraphRule implements Rule {
+    readonly name: string = "Standard/Block/Paragraph";
+    readonly description: string = "Standard Markdown Block Rule";
+
+    // public readonly regex: RegExp = /^(?:(?:[^$]|\$(?!\$))(?:\n|$)?)+/;
+
+    constructor() {
+    }
+
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
+        return maybeTrue(s.source.length > 0 && s.source[0] != '\n') && new InlineParagraph(s.maybeBreakAt(s.source.indexOf('\n')));
     }
 }
 
@@ -97,7 +114,9 @@ export class QuotesRule implements Rule {
 
     public readonly regex: RegExp = /^( *>[^\n]*(?:\n[^\n]+)*\n?)+/;
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
+    public first: string[] = ['>'];
+
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         return capturing && new Quotes(ctx.parseBlockElements(
             // todo slice
@@ -112,7 +131,9 @@ export class CodeBlockRule implements Rule {
 
     public readonly regex: RegExp = /^((?: {4}| {0,3}\t)[^\n]+(\n|$))+/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    public first: string[] = ['    ', '\t'];
+
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         // todo slice
         return capturing && new CodeBlock(capturing[0].replace(/^(?: {4}| {0,3}\t)/gm, ''));
@@ -126,16 +147,18 @@ export class HeaderBlockRule implements Rule {
     public readonly atxRegex: RegExp = /^(#{1,6})([\t\f\v\r ])([^\n]*?)(#*(?:\n|$))/;
     public readonly setextRegex: RegExp = /^([^\n]+)(\n=+(?:\n|$))/;
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
+    public first: string[] = ['#'];
+
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
         return this.matchATX(s, ctx) || this.matchSetext(s, ctx);
     };
 
-    matchATX(s: StringStream, ctx: RuleContext): MaybeToken {
+    matchATX(s: IStringStream, ctx: RuleContext): MaybeToken {
         const capturing = maybePickRegexParts(s, this.atxRegex);
         return capturing && new HeaderBlock(ctx.parseInlineElements(capturing[2]), capturing[0].length);
     }
 
-    matchSetext(s: StringStream, ctx: RuleContext): MaybeToken {
+    matchSetext(s: IStringStream, ctx: RuleContext): MaybeToken {
         const capturing = maybePickRegexParts(s, this.setextRegex);
         return capturing && new HeaderBlock(ctx.parseInlineElements(capturing[0]), 1);
     }
@@ -147,7 +170,9 @@ export class HorizontalRule implements Rule {
 
     public readonly regex: RegExp = /^(?:(?:\*[\r\t ]*){3,}|(?:-[\r\t ]*){3,})(?:\n|$)/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    public first: string[] = ['*', '-'];
+
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         return capturing && new Horizontal();
     };
@@ -156,9 +181,11 @@ export class HorizontalRule implements Rule {
 export class LinkDefinitionRule implements Rule {
     readonly name: string = "Standard/Block/LinkDefinition";
     readonly description: string = "Standard Markdown Block Rule";
-    public readonly regex: RegExp = /^ *\[((?:\\\\|\\]|[^\]])+)]: *<?([^\s>]+)>?(?: +["'(]([^\n]*)["')])? *(?:\n|$)/;
+    public readonly regex: RegExp = /^b*\[((?:\\\\|\\]|[^\]])+)]: *<?([^\s>]+)>?(?: +["'(]([^\n]*)["')])? *(?:\n|$)/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    public first: string[] = ['['];
+
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
@@ -197,12 +224,14 @@ export class ListBlockRule implements Rule {
     public static readonly replaceRegex = /^[ \v\r\f]?[ \v\r\f\t]/gm;
     private readonly enableGFMRules: boolean;
 
+    public first: string[] = ['+', '-', '*', '[0-9]+\.'];
+    
     constructor({enableGFMRules}: { enableGFMRules?: boolean }) {
         this.enableGFMRules = enableGFMRules || false;
     }
 
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
         // todo: \t?
         let lookAheadRegex = /^[\r\v\f ]{0,3}([*+-]|[0-9]+\.)[\t\r\v\f ]/;
         let capturing = lookAheadRegex.exec(s.source);
@@ -365,6 +394,8 @@ export class HTMLBlockRule implements Rule {
     protected readonly others: RegExp;
     protected readonly safeHTMLTagFilter?: (tag: string) => boolean;
 
+    public first: string[] = ['<\\w+'];    
+
     constructor(options?: HTMLBlockOptions) {
         let v = Object.assign(options || {}, defaultValidTags());
         this.open_tag = v.open_tag;
@@ -373,14 +404,14 @@ export class HTMLBlockRule implements Rule {
         this.safeHTMLTagFilter = v.safeHTMLTagFilter;
     }
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
         if (s.source[0] !== '<') {
             return undefined;
         }
         return this.matchBlock(s) || this.matchOthers(s);
     }
 
-    matchBlock(s: StringStream): MaybeToken {
+    matchBlock(s: IStringStream): MaybeToken {
         let capturing = this.filterTag(s, this.open_tag);
         if (capturing === null) {
             return undefined;
@@ -394,7 +425,7 @@ export class HTMLBlockRule implements Rule {
         return this.gfmStyleForward(s, capturing);
     }
 
-    matchOthers(s: StringStream): MaybeToken {
+    matchOthers(s: IStringStream): MaybeToken {
         let capturing = this.filterTag(s, this.close_tag) || this.others.exec(s.source);
         if (capturing === null) {
             return undefined;
@@ -403,7 +434,7 @@ export class HTMLBlockRule implements Rule {
         return this.gfmStyleForward(s, capturing);
     }
 
-    filterTag(s: StringStream, filter: { exec(s: string): RegExpExecArray | null, getTagName(r: RegExpExecArray): string }) {
+    filterTag(s: IStringStream, filter: { exec(s: string): RegExpExecArray | null, getTagName(r: RegExpExecArray): string }) {
 
         let capturing = filter.exec(s.source);
         if (capturing === null) {
@@ -416,7 +447,7 @@ export class HTMLBlockRule implements Rule {
         return capturing;
     }
 
-    gfmStyleForward(s: StringStream, capturing: RegExpExecArray): HTMLBlock {
+    gfmStyleForward(s: IStringStream, capturing: RegExpExecArray): HTMLBlock {
 
         forwardRegexp(s, capturing);
         let lastChar = 'a', i = 0;
@@ -440,7 +471,7 @@ export class InlinePlainExceptSpecialMarksRule implements Rule {
 
     public readonly regex: RegExp = /^(?:\\[!`_*\[$\\]|[^<!`_*\[$\\])+/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         return capturing && new InlinePlain(unescapeBackSlash(capturing[0]));
     };
@@ -452,7 +483,7 @@ export class InlinePlainRule implements Rule {
 
     public readonly regex: RegExp = /^(?:[!`_*\[$\\<](?:\\[!`_*\[$\\]|[^<!`_*\[$\\])*|(?:\\[!`_*\[$\\]|[^<!`_*\[$\\])+)/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         return capturing && new InlinePlain(unescapeBackSlash(capturing[0]));
     };
@@ -467,11 +498,11 @@ export class LinkOrImageRule implements Rule {
     public readonly autoLinkRegex: RegExp =
         /^<(?:(?:mailto|MAILTO):([\w.!#$%&'*+\/=?^`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)|([a-zA-Z][a-zA-Z\d+.-]{1,31}:[^<>\s]*))>/;
 
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
         return this.matchInline(s, ctx) || this.matchAutoLink(s, ctx) || this.matchRef(s, ctx);
     };
 
-    matchInline(s: StringStream, _: RuleContext): MaybeToken {
+    matchInline(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         if (!capturing) return undefined;
         if (capturing[1] !== '') {
@@ -481,7 +512,7 @@ export class LinkOrImageRule implements Rule {
         }
     }
 
-    matchAutoLink(s: StringStream, _: RuleContext): MaybeToken {
+    matchAutoLink(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.autoLinkRegex);
         if (!capturing) return undefined;
         if (capturing[1] !== undefined) {
@@ -491,7 +522,7 @@ export class LinkOrImageRule implements Rule {
         }
     }
 
-    matchRef(s: StringStream, _: RuleContext): MaybeToken {
+    matchRef(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.refRegex);
         if (!capturing) return undefined;
         if (capturing[1] !== '') {
@@ -508,7 +539,7 @@ export class EmphasisRule implements Rule {
 
     public readonly regex: RegExp = /^(?:(_{1,2})((?:\\\\|\\_|[^\\_])+)(_{1,2})|(\*{1,2})((?:\\\\|\\\*|[^\\*])+)(\*{1,2}))/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
@@ -534,7 +565,7 @@ export class InlineCodeRule implements Rule {
 
     public readonly regex: RegExp = /^(?:``([^`\n\r\u2028\u2029](?:\\\\|\\`|`?[^`\n\r\u2028\u2029])*)``|`((?:\\\\|\\`|[^`\n\r\u2028\u2029])+)`)/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         const capturing = maybeForward(s, this.regex);
         return capturing && new InlineCode(unescapeBackSlash(capturing[1] || capturing[2]));
     };

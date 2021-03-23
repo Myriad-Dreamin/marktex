@@ -1,7 +1,8 @@
 import {StringStream} from '..';
-import {BlockElement, InlineElement, InlinePlain, MaybeToken, TokenType} from "../token/token";
+import {BlockElement, InlineElement, InlineParagraph, InlinePlain, MaybeToken, Paragraph, TokenType} from "../token/token";
 import {Rule} from '../rules/rule';
 import {blockRules, inlineRules} from "../rules";
+import { IStringStream } from '../lib/stream';
 
 export interface ParserOptions {
     inlineRules?: Rule[];
@@ -19,16 +20,16 @@ export class Parser {
     }
 
 
-    parseBlockElement(source: StringStream): BlockElement {
+    parseBlockElement(source: IStringStream): BlockElement {
         return this._parse(source, this.blockRules)
     }
 
-    parseInlineElement(source: StringStream): InlineElement {
+    parseInlineElement(source: IStringStream): InlineElement {
         return this._parse(source, this.inlineRules)
     }
 
     // noinspection JSUnusedGlobalSymbols
-    parseInlineElements(s: StringStream): InlineElement[] {
+    parseInlineElements(s: IStringStream): InlineElement[] {
         let r: InlineElement[] = [];
         let e: MaybeToken = undefined, t: MaybeToken = undefined;
         while (!s.eof) {
@@ -44,15 +45,33 @@ export class Parser {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    parseBlockElements(s: StringStream): BlockElement[] {
+    parseBlockElements(s: IStringStream): BlockElement[] {
         let r: BlockElement[] = [];
+        let t: MaybeToken = undefined;
+        let streams: IStringStream[] = [];
         while (!s.eof) {
-            r.push(this.parseBlockElement(s));
+            t = this.parseBlockElement(s);
+            if (!t) {
+                break;
+            }
+            if (t.token_type == TokenType.InlineParagraph) {
+                streams.push((<InlineParagraph>t).inlineText);
+            } else {
+                if (streams.length) {
+                    r.push(new Paragraph(this.parseInlineElements(StringStream.join(streams))));
+                    streams.splice(0, streams.length);
+                }
+                r.push(t);
+            }
+        }
+        if (streams.length) {
+            r.push(new Paragraph(this.parseInlineElements(StringStream.join(streams))));
+            streams.splice(0, streams.length);
         }
         return r;
     }
 
-    _parse(source: StringStream, rules: Rule[]) {
+    _parse(source: IStringStream, rules: Rule[]) {
         for (let rule of rules) {
             let block: MaybeToken = rule.match(source, this);
             if (block !== undefined) {

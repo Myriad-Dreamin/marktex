@@ -44,7 +44,7 @@ export class RenderDriver implements IRenderDriver {
         this.renderer = renderer;
         this.latexParser = new LaTeXParser();
         this.texCommands = texCommands;
-        this.stack = opts?.originStack || [this.createLinkMap, this.handleElements];
+        this.stack = opts?.originStack || [this.createLinkMap, this.handleElements, this.mergeOneLineParagraph];
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -63,6 +63,10 @@ export class RenderDriver implements IRenderDriver {
 
     handleElements(ctx: RenderContext): void {
         ctx.driver.renderElements(ctx, ctx.tokens);
+    }
+
+    mergeOneLineParagraph(ctx: RenderContext): void {
+        
     }
 
     render(s: StringStream, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {

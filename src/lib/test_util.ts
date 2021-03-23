@@ -1,4 +1,4 @@
-import {Rule, RuleContext} from "../rules";
+import {newBlockRules, Rule, RuleContext} from "../rules";
 import {StringStream} from "./stream";
 import {Parser} from "..";
 
@@ -11,8 +11,9 @@ export type elementMatcher = ({title, text, matchedLength: number, expectedEleme
                                   { title?: string, text: string, matchedLength: number, expectedElement: any }) => void;
 export type textAcceptor = ({text, title}: { text: string, title?: string }) => void;
 
+const parser = new Parser({ blockRules: newBlockRules({ lazyParagraph: true }) });
 export function createContext(): Parser {
-    return new Parser();
+    return parser;
 }
 
 export function testTitleString(text: string): string {

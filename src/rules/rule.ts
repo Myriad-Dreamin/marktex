@@ -1,16 +1,17 @@
-import {StringStream} from "..";
+
+import { IStringStream } from "../lib/stream";
 import {BlockElement, InlineElement, MaybeToken} from "../token/token";
 
 
 export interface RuleContext {
 
-    parseBlockElement(source: StringStream): BlockElement
+    parseBlockElement(source: IStringStream): BlockElement
 
-    parseInlineElement(source: StringStream): InlineElement
+    parseInlineElement(source: IStringStream): InlineElement
 
-    parseBlockElements(source: StringStream): BlockElement[]
+    parseBlockElements(source: IStringStream): BlockElement[]
 
-    parseInlineElements(source: StringStream): InlineElement[]
+    parseInlineElements(source: IStringStream): InlineElement[]
 }
 
 
@@ -18,6 +19,6 @@ export interface Rule {
     readonly name?: string
     readonly description?: string
 
-    match: (s: StringStream, ctx: RuleContext) => MaybeToken
+    match: (s: IStringStream, ctx: RuleContext) => MaybeToken
 }
 
