@@ -1,4 +1,5 @@
 import {StringStream} from "..";
+import { IStringStream } from "../lib/stream";
 
 enum TokenType {
     Paragraph,
@@ -22,6 +23,7 @@ enum TokenType {
 
     TableBlock,
 
+    InlineParagraph,
     StrikeThrough,
 }
 
@@ -49,6 +51,7 @@ const StdBlockTokenL = TokenType.Paragraph, StdBlockTokenR = TokenType.HeaderBlo
 
 interface Token {
     readonly token_type: number;
+    parent?: Token;
 }
 
 type MaybeToken = Token | undefined
@@ -76,6 +79,15 @@ A paragraph is simply one or more consecutive lines of text, separated by one or
 A blank line is any line that looks like a blank line — a line containing nothing but spaces or
 tabs is considered blank.) Normal paragraphs should not be indented with spaces or tabs.
 */
+class InlineParagraph implements BlockElement {
+    readonly token_type = TokenType.InlineParagraph;
+    public inlineText: IStringStream;
+
+    constructor(inlineText: IStringStream) {
+        this.inlineText = inlineText;
+    }
+
+}
 class Paragraph implements BlockElement {
     readonly token_type = TokenType.Paragraph;
     public inlineElements: InlineElement[];
@@ -578,6 +590,7 @@ export {
 }
 
 export {
+    InlineParagraph,
     Paragraph,
     NewLine,
     Quotes,

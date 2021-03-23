@@ -1,5 +1,5 @@
 import {Rule, RuleContext} from "./rule";
-import {forwardRegexp, StringStream} from "../lib/stream";
+import {forwardRegexp, IStringStream, StringStream} from "../lib/stream";
 import {CodeBlock, InlineElement, MaybeToken, StrikeThrough, TableBlock} from '../token/token';
 import { unescapeBackSlash } from "../lib/escape";
 
@@ -10,7 +10,9 @@ export class GFMFencedCodeBlockRule implements Rule {
     public static readonly backtickRegex: RegExp = /^(`{3,}) *([^`\s]+)?[^`\n]*(?:\n|$)([\s\S]*?)(?:\1`*|$)/;
     public static readonly tildeRegex: RegExp = /^(~{3,}) *([^~\s]+)?.*(?:\n|$)([\s\S]*?)(?:\1~*|$)/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    public first: string[] = ['```', '~~~'];    
+
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         let capturing = GFMFencedCodeBlockRule.backtickRegex.exec(s.source);
         if (capturing === null) {
             capturing = GFMFencedCodeBlockRule.tildeRegex.exec(s.source);
@@ -28,9 +30,11 @@ export class GFMTableBlockRule implements Rule {
     readonly name: string = "GFMTableBlock";
     readonly description: string = "GFM Markdown Block Rule";
 
+    public first: string[] = ['|'];    
+
     public readonly tableHeadRegex: RegExp = /^\s*\|([^\n]*)\|\s*\n\s*\|?([\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff\-|:]+)\s*(\n|$)/;
     public readonly dataRow: RegExp = /^[\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*\|?([^\n]*)[\r\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*(\n|$)/;
-    match(s: StringStream, ctx: RuleContext): MaybeToken {
+    match(s: IStringStream, ctx: RuleContext): MaybeToken {
         let capturing = this.tableHeadRegex.exec(s.source);
         if (!capturing) {
             return undefined;
@@ -170,7 +174,9 @@ export class GFMStrikeThroughRule implements Rule {
 
     public readonly regex: RegExp = /^(~{2})((?:\\\\|\\~|[^~\\])+)(~{2})/;
 
-    match(s: StringStream, _: RuleContext): MaybeToken {
+    public first: string[] = ['~~'];    
+
+    match(s: IStringStream, _: RuleContext): MaybeToken {
         let capturing = this.regex.exec(s.source);
         if (capturing === null) {
             return undefined;
