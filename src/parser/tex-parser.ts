@@ -328,7 +328,7 @@ export class LaTeXParser {
                 s.forward(capturing.index + capturing[0].length);
                 let vars: TexCmdVar[] = braceMatch(s);
 
-                markdownText += cmd(ctx, vars, this.tex);
+                markdownText += cmd(ctx, vars, this.tex.bind(this));
             } else {
                 markdownText += escapeHTML(s.source.slice(0, capturing.index + capturing[0].length));
                 s.forward(capturing.index + capturing[0].length);
