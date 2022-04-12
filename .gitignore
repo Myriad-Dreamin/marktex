@@ -1,7 +1,9 @@
 .idea/
 node_modules/
 dist
-**.log
 dist/**/*.bench.js
 dist/**/*.test.js
+**.log
 a.html
+
+.nyc_output

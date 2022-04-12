@@ -18,6 +18,10 @@
     "dist"
     // "scripts/compiler.ts"
   ],
+  "files": [
+    "scripts/compiler.ts",
+    "scripts/fuzzer.ts",
+  ],
   "include": [
     "src"
   ]
