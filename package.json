@@ -12,7 +12,8 @@
     "t": "npx mocha --reporter spec --require ts-node/register",
     "b": "npx mocha --prof --reporter spec --require ts-node/register",
     "bench": "yarn run b src/**/*.bench.ts",
-    "test": "yarn run t src/**/*.test.ts"
+    "test": "yarn run t src/**/*.test.ts",
+    "fuzzing-repro": "node dist/scripts/fuzzer.js repro fuzzers/corpus/crashes"
   },
   "repository": "github.com/Myriad-Dreamin/marktex",
   "author": "Myriad-Dreamin <camiyoru@gmail.com>",
@@ -24,6 +25,7 @@
     "@types/node": "^14.14.34",
     "benchmark": "^2.1.4",
     "chai": "^4.2.0",
+    "jsfuzz": "^1.0.15",
     "minimist": ">=0.2.1",
     "mocha": "^8.3.2",
     "ts-node": "^8.6.2",

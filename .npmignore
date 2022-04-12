@@ -5,5 +5,6 @@ dist/*/**.test.ts
 dist/*/**.bench.ts
 a.html
 scripts/
+dist/scripts/
 src/
 **.js~build
