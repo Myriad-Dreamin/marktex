@@ -14,7 +14,7 @@
     "node_modules",
     "src/**/*.test.ts",
     "src/**/*.bench.ts",
-    "src/lib/test_util.ts",
+    "src/lib/util.test.ts",
     "dist"
     // "scripts/compiler.ts"
   ],
