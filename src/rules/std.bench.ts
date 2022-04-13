@@ -1,4 +1,4 @@
-import {onRun} from "../lib/test_util";
+import {onRun} from "../lib/util.test";
 import {ListBlockRule} from "./std";
 
 onRun(new ListBlockRule({enableGFMRules: false}), function (runner) {

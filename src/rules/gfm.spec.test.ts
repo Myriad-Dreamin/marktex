@@ -1,5 +1,5 @@
 import {CodeBlockRule, HeaderBlockRule, HorizontalRule, ListBlockRule, QuotesRule} from "./std";
-import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from '../lib/test_util';
+import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from '../lib/util.test';
 import {
     CodeBlock, Emphasis,
     HeaderBlock,

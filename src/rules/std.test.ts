@@ -12,7 +12,7 @@ import {
     ListBlockRule,
     QuotesRule
 } from "./std";
-import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/test_util";
+import {elementMatcher, expect, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/util.test";
 import {
     CodeBlock,
     Emphasis,
@@ -532,7 +532,7 @@ describe("ListBlockRule", () => {
         matchedLength: "* ".length,
         expectedElement: new ListBlock(false, [new ListElement('*')]),
     });
-    
+
     match({
         text: "* 1\n1\n\n    + 1\n+ 1",
         matchedLength: "* 1\n1\n\n    + 1\n+ 1".length,

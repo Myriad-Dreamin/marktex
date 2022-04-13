@@ -1,5 +1,5 @@
 import {ParagraphRule} from "./std";
-import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/test_util";
+import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/util.test";
 import {Emphasis, InlinePlain, MathBlock, Paragraph} from "../token/token";
 
 describe("ParagraphRule", () => {
