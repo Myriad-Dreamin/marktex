@@ -1,5 +1,5 @@
 import {GFMFencedCodeBlockRule} from "./gfm";
-import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/test_util";
+import {elementMatcher, itWillMatchElement, itWillNotMatchElement, textAcceptor} from "../lib/util.test";
 import {CodeBlock} from "../token/token";
 
 
