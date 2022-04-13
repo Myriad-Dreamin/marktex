@@ -27,7 +27,7 @@ export interface RenderContext<TexExtends = any> {
     readonly parser: Parser;
     readonly latexParser: LaTeXParser;
     readonly next: () => void;
-    readonly tokens: Token[];
+    tokens: Token[];
 
     linkDefs: { [linkIdentifier: string]: LinkDefinition };
     html: string;
@@ -40,7 +40,7 @@ export interface IRenderDriverInner {
     renderElements(ctx: RenderContext, elements: Token[]): void;
 }
 
-export interface IRenderDriver extends IRenderDriverInner {
+export interface IRenderDriver {
     render(s: StringStream, mdFieldTexCommands?: { [cn: string]: commandFunc }): string;
 
     renderString(s: string, mdFieldTexCommands?: { [cn: string]: commandFunc }): string;

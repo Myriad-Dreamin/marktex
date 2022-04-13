@@ -21,7 +21,7 @@ import {
   Token,
   TokenType,
 } from '../token/token';
-import {IRenderDriver, IRenderer, RenderContext} from '../proto';
+import {IRenderDriver, IRenderDriverInner, IRenderer, RenderContext} from '../proto';
 
 export type RenderMiddleware = (ctx: RenderContext) => void;
 
@@ -29,79 +29,7 @@ export interface RenderDriverOptions {
   originStack?: RenderMiddleware[];
 }
 
-export class RenderDriver implements IRenderDriver {
-  protected renderer: IRenderer;
-  protected parser: Parser;
-  protected latexParser: LaTeXParser;
-  protected texCommands: { [p: string]: commandFunc };
-  private readonly stack: RenderMiddleware[];
-
-  constructor(
-    parser: Parser,
-    renderer: IRenderer,
-    opts?: RenderDriverOptions) {
-    this.parser = parser;
-    this.renderer = renderer;
-    this.latexParser = new LaTeXParser();
-    this.texCommands = texCommands;
-    this.stack = opts?.originStack || [this.createLinkMap, this.handleElements, this.mergeOneLineParagraph];
-  }
-
-  // noinspection JSUnusedGlobalSymbols
-  addMiddleware(middleware: RenderMiddleware): void {
-    this.stack.push(middleware);
-  }
-
-  createLinkMap(ctx: RenderContext): void {
-    for (const el of ctx.tokens) {
-      if (el.token_type === TokenType.LinkDefinition) {
-        const linkDef: LinkDefinition = el as LinkDefinition;
-        ctx.linkDefs[linkDef.linkIdentifier] = linkDef;
-      }
-    }
-  }
-
-  handleElements(ctx: RenderContext): void {
-    ctx.driver.renderElements(ctx, ctx.tokens);
-  }
-
-  mergeOneLineParagraph(ctx: RenderContext): void {
-
-  }
-
-  render(s: StringStream, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {
-    let stackIndex = 0;
-    const stack = this.stack;
-    const ctx: RenderContext = {
-      linkDefs: {},
-      html: '',
-      driver: this,
-      render: this.renderer,
-      parser: this.parser,
-      latexParser: this.latexParser,
-      tokens: this.parser.parseBlockElements(s),
-
-      texCtx: {
-        texCommands: this.texCommands,
-        texCommandDefs: mdFieldTexCommands || {},
-      },
-      next(): void {
-        for (; stackIndex < stack.length;) {
-          stack[stackIndex++](ctx);
-        }
-      },
-    };
-    if (this.renderer.initContext) {
-      this.renderer.initContext(ctx);
-    }
-    ctx.next();
-    return ctx.html;
-  }
-
-  renderString(s: string, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {
-    return this.render(new StringStream(s), mdFieldTexCommands);
-  }
-
+class RenderDriverInner implements IRenderDriverInner {
   renderElements(ctx: RenderContext, elements: Token[]): void {
     for (const el of elements) {
       ctx.driver.renderElement(ctx, el);
@@ -165,5 +93,114 @@ export class RenderDriver implements IRenderDriver {
       default:
         throw new Error(`invalid Token Type: ${el.token_type}`);
     }
+  }
+}
+
+export class RenderDriver implements IRenderDriver {
+  protected inner: RenderDriverInner;
+  protected renderer: IRenderer;
+  protected parser: Parser;
+  protected latexParser: LaTeXParser;
+  protected texCommands: { [p: string]: commandFunc };
+  private readonly stack: RenderMiddleware[];
+
+  constructor(
+    parser: Parser,
+    renderer: IRenderer,
+    opts?: RenderDriverOptions) {
+    this.parser = parser;
+    this.renderer = renderer;
+    this.inner = new RenderDriverInner();
+    this.latexParser = new LaTeXParser();
+    this.texCommands = texCommands;
+    this.stack = opts?.originStack || [
+      RenderDriver.createLinkMap, RenderDriver.handleElements, RenderDriver.mergeOneLineParagraph];
+  }
+
+  static createLinkMap(ctx: RenderContext): void {
+    for (const el of ctx.tokens) {
+      if (el.token_type === TokenType.LinkDefinition) {
+        const linkDef: LinkDefinition = el as LinkDefinition;
+        ctx.linkDefs[linkDef.linkIdentifier] = linkDef;
+      }
+    }
+  }
+
+  static handleElements(ctx: RenderContext): void {
+    ctx.driver.renderElements(ctx, ctx.tokens);
+  }
+
+  static mergeOneLineParagraph(ctx: RenderContext): void {
+
+  }
+
+  // noinspection JSUnusedGlobalSymbols
+  addMiddleware(middleware: RenderMiddleware): void {
+    this.stack.push(middleware);
+  }
+
+  getRenderer(): IRenderer {
+    return this.renderer;
+  }
+
+  setRenderer(r: IRenderer): void {
+    this.renderer = r;
+  }
+
+  createContext(mdFieldTexCommands?: { [cn: string]: commandFunc }): RenderContext {
+    const ctx = {
+      linkDefs: {},
+      html: '',
+      driver: this.inner,
+      render: this.renderer,
+      parser: this.parser,
+      latexParser: this.latexParser,
+      tokens: [],
+
+      texCtx: {
+        texCommands: this.texCommands,
+        texCommandDefs: mdFieldTexCommands || {},
+      },
+      _next(): void {
+      },
+      next(): void {
+        this._next();
+      },
+    };
+    if (this.renderer.initContext) {
+      this.renderer.initContext(ctx);
+    }
+
+    return ctx;
+  }
+
+  renderElements(ctx: RenderContext, tokens: Token[]): string {
+    let stackIndex = 0;
+    const stack = this.stack;
+    ctx.tokens = tokens;
+    (ctx as any)._next = function _next(): void {
+      for (; stackIndex < stack.length;) {
+        stack[stackIndex++](ctx);
+      }
+    };
+    ctx.html = '';
+    ctx.next();
+    return ctx.html;
+  }
+
+  parseBlockElements(s: StringStream): Token[] {
+    return this.parser.parseBlockElements(s);
+  }
+
+  parseBlockElementsString(s: string): Token[] {
+    return this.parser.parseBlockElements(new StringStream(s));
+  }
+
+  render(s: StringStream, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {
+    return this.renderElements(this.createContext(mdFieldTexCommands), this.parseBlockElements(s));
+  }
+
+  renderString(s: string, mdFieldTexCommands?: { [cn: string]: commandFunc }): string {
+    return this.render(new StringStream(s), mdFieldTexCommands);
   }
 }
