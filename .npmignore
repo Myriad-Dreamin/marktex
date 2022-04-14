@@ -1,10 +1,12 @@
 .idea/
+.nyc_output/
+fuzzers/
+scripts/
+src/
 **.log
 node_modules/
 dist/*/**.test.ts
 dist/*/**.bench.ts
-a.html
-scripts/
 dist/scripts/
-src/
+a.html
 **.js~build
