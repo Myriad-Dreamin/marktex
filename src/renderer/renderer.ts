@@ -1,4 +1,4 @@
-import {StringStream} from '..';
+import {StringStream} from '../lib/stream';
 import {
   CodeBlock,
   Emphasis,

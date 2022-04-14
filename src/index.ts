@@ -29,12 +29,6 @@ export interface MarkTeXRenderDriverOptions extends MarkTeXParserOptions, MarkTe
   renderer?: Renderer;
 }
 
-//
-// originStack?: RenderMiddleware[],
-//     wrapCodeClassTag?: (language: string) => string,
-//     highlight?: HighlightFunc,
-//     enableLaTeX?: boolean,
-
 // noinspection JSUnusedGlobalSymbols
 const myriad = {
   author: 'Myriad-Dreamin',
