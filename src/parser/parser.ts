@@ -1,7 +1,7 @@
-import {StringStream} from '..';
-import {BlockElement, InlineElement, InlineParagraph, InlinePlain, MaybeToken, Paragraph, TokenType} from "../token/token";
+import {StringStream} from '../';
+import {BlockElement, InlineElement, InlineParagraph, InlinePlain, MaybeToken, Paragraph, TokenType} from '../token/token';
 import {Rule} from '../rules/rule';
-import {blockRules, inlineRules} from "../rules";
+import {blockRules, inlineRules} from '../rules';
 import { IStringStream } from '../lib/stream';
 
 export interface ParserOptions {
@@ -21,21 +21,21 @@ export class Parser {
 
 
     parseBlockElement(source: IStringStream): BlockElement {
-        return this._parse(source, this.blockRules)
+        return this._parse(source, this.blockRules);
     }
 
     parseInlineElement(source: IStringStream): InlineElement {
-        return this._parse(source, this.inlineRules)
+        return this._parse(source, this.inlineRules);
     }
 
     // noinspection JSUnusedGlobalSymbols
     parseInlineElements(s: IStringStream): InlineElement[] {
-        let r: InlineElement[] = [];
-        let e: MaybeToken = undefined, t: MaybeToken = undefined;
+        const r: InlineElement[] = [];
+        let e: MaybeToken, t: MaybeToken;
         while (!s.eof) {
             t = this.parseInlineElement(s);
             if (e && e.token_type == TokenType.InlinePlain && t.token_type == TokenType.InlinePlain) {
-                (<InlinePlain>e).content += (<InlinePlain>t).content;
+                (e as InlinePlain).content += (t as InlinePlain).content;
             } else {
                 r.push(t);
                 e = t;
@@ -46,16 +46,16 @@ export class Parser {
 
     // noinspection JSUnusedGlobalSymbols
     parseBlockElements(s: IStringStream): BlockElement[] {
-        let r: BlockElement[] = [];
-        let t: MaybeToken = undefined;
-        let streams: IStringStream[] = [];
+        const r: BlockElement[] = [];
+        let t: MaybeToken;
+        const streams: IStringStream[] = [];
         while (!s.eof) {
             t = this.parseBlockElement(s);
             if (!t) {
                 break;
             }
             if (t.token_type == TokenType.InlineParagraph) {
-                streams.push((<InlineParagraph>t).inlineText);
+                streams.push((t as InlineParagraph).inlineText);
             } else {
                 if (streams.length) {
                     r.push(new Paragraph(this.parseInlineElements(StringStream.join(streams))));
@@ -72,10 +72,10 @@ export class Parser {
     }
 
     _parse(source: IStringStream, rules: Rule[]) {
-        for (let rule of rules) {
-            let block: MaybeToken = rule.match(source, this);
+        for (const rule of rules) {
+            const block: MaybeToken = rule.match(source, this);
             if (block !== undefined) {
-                return block
+                return block;
             }
         }
 
